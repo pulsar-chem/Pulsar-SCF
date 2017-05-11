@@ -1,11 +1,11 @@
-#include "pulsar_scf/X.hpp"
+#include "pulsar_scf/builders/X.hpp"
 #include "pulsar_scf/MatrixFillFxns.hpp"
 #include <pulsar/modulebase/OneElectronIntegral.hpp>
 #include <memory>
 
 using namespace pulsar;
 using matrix_type=EigenMatrixImpl::matrix_type;
-using ReturnType=OneElectronMatrix::ReturnType;
+using ReturnType=MatrixBuilder::ReturnType;
 namespace pulsar_scf {
 
 ///This is flat out stolen from libint2's hartree-fock++.cc routine
@@ -16,7 +16,7 @@ ReturnType Orthogonalizer:: calculate_(const std::string &,
                                      const BasisSet &bs1,
                                      const BasisSet &bs2)
 {
-    auto S=*convert_to_eigen(*create_child_from_option<OneElectronMatrix>("S_KEY")
+    auto S=*convert_to_eigen(*create_child_from_option<MatrixBuilder>("S_KEY")
                              ->calculate("",deriv,wfn,bs1,bs2)[0]);
     Eigen::SelfAdjointEigenSolver<matrix_type> eig_solver(S);
     auto U = eig_solver.eigenvectors();

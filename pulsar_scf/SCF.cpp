@@ -1,7 +1,7 @@
 #include "pulsar_scf/SCF.hpp"
-#include "pulsar_scf/DIIS.hpp"
+#include "pulsar_scf/helpers/DIIS.hpp"
 #include "pulsar_scf/HelperFunctions.hpp"
-#include <pulsar/modulebase/OneElectronMatrix.hpp>
+#include <pulsar/modulebase/MatrixBuilder.hpp>
 
 using namespace pulsar;
 using matrix_type=EigenMatrixImpl::matrix_type;
@@ -38,16 +38,16 @@ DerivReturnType SCF::deriv_(size_t deriv,
     double oldE=ENuc;
     std::cout<<"Nuclear-Nuclear repulsion is: "<<ENuc<<std::endl;
     std::unique_ptr<DIIS<matrix_type>> diis;
-    const auto H=*convert_to_eigen(*create_child_from_option<OneElectronMatrix>("H_KEY")
+    const auto H=*convert_to_eigen(*create_child_from_option<MatrixBuilder>("H_KEY")
                                    ->calculate("",deriv,wfn,bs,bs)[0]);
-    const auto S=*convert_to_eigen(*create_child_from_option<OneElectronMatrix>("S_KEY")
+    const auto S=*convert_to_eigen(*create_child_from_option<MatrixBuilder>("S_KEY")
                                    ->calculate("",deriv,wfn,bs,bs)[0]);
-    const auto Xs=create_child_from_option<OneElectronMatrix>("X_KEY")->calculate("",deriv,wfn,bs,bs);
+    const auto Xs=create_child_from_option<MatrixBuilder>("X_KEY")->calculate("",deriv,wfn,bs,bs);
     matrix_type X=*convert_to_eigen(*Xs[0]);
     matrix_type D=*convert_to_eigen(*wfn.opdm->get(Irrep::A,Spin::alpha));
     Wavefunction newwfn(wfn);
     do{
-        auto F=*convert_to_eigen(*create_child_from_option<OneElectronMatrix>("F_KEY")
+        auto F=*convert_to_eigen(*create_child_from_option<MatrixBuilder>("F_KEY")
                      ->calculate("",deriv,newwfn,bs,bs)[0]);
         const double newE=D.cwiseProduct(H+F).sum()+ENuc;
         const double dE=newE-oldE;

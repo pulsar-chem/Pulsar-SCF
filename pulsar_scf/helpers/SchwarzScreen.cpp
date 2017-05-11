@@ -1,10 +1,10 @@
-#include "pulsar_scf/SchwarzScreen.hpp"
-#include <pulsar/modulebase/TwoElectronIntegral.hpp>
+#include "pulsar_scf/helpers/SchwarzScreen.hpp"
+#include <pulsar/modulebase/FourCenterIntegral.hpp>
 
 using namespace pulsar;
 
 using matrix_type=EigenMatrixImpl::matrix_type;
-using ReturnType=OneElectronMatrix::ReturnType;
+using ReturnType=MatrixBuilder::ReturnType;
 
 namespace pulsar_scf {
 
@@ -14,7 +14,7 @@ ReturnType SchwarzScreen::calculate_(const std::string &,
                                      const BasisSet & bs1,
                                      const BasisSet & bs2)
 {
-    auto ERIInts=create_child_from_option<TwoElectronIntegral>("ERI_INTS_KEY");
+    auto ERIInts=create_child_from_option<FourCenterIntegral>("ERI_INTS_KEY");
     ERIInts->options().change("THRESHOLD",0.0);
     ERIInts->initialize(deriv,wfn,bs1,bs2,bs1,bs2);
     const bool is_symmetric=bs1==bs2;

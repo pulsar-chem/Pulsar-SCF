@@ -1,11 +1,11 @@
-#include "pulsar_scf/H.hpp"
+#include "pulsar_scf/builders/H.hpp"
 #include <pulsar/modulebase/OneElectronIntegral.hpp>
 #include <memory>
 #include <Eigen/Dense>
 
 using namespace pulsar;
 using matrix_type=EigenMatrixImpl::matrix_type;
-using ReturnType=OneElectronMatrix::ReturnType;
+using ReturnType=MatrixBuilder::ReturnType;
 namespace pulsar_scf {
 
 ReturnType HCore:: calculate_(const std::string &,
@@ -18,7 +18,7 @@ ReturnType HCore:: calculate_(const std::string &,
     matrix_type H=Eigen::MatrixXd::Zero(bs1.n_functions(),bs2.n_functions());
     for(const auto& ti: terms)
     {
-        auto termi=create_child<OneElectronMatrix>(ti);
+        auto termi=create_child<MatrixBuilder>(ti);
         H+=*convert_to_eigen(*termi->calculate("",deriv,wfn,bs1,bs2)[0]);
     }
 

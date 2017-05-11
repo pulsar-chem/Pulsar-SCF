@@ -1,4 +1,4 @@
-#include "pulsar_scf/DF.hpp"
+#include "pulsar_scf/builders/DF.hpp"
 #include <pulsar/modulebase/TwoCenterIntegral.hpp>
 #include <pulsar/modulebase/ThreeCenterIntegral.hpp>
 #include "pulsar_scf/MatrixFillFxns.hpp"
@@ -8,7 +8,7 @@ using matrix_type=EigenMatrixImpl::matrix_type;
 
 namespace pulsar_scf {
 
-OneElectronMatrix::ReturnType Metric::calculate_(const std::string &,
+MatrixBuilder::ReturnType Metric::calculate_(const std::string &,
                                      unsigned int deriv,
                                      const Wavefunction & wfn,
                                      const BasisSet &bs1,

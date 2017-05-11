@@ -1,12 +1,12 @@
 #pragma once
-#include <pulsar/modulebase/OneElectronMatrix.hpp>
+#include <pulsar/modulebase/MatrixBuilder.hpp>
 #include <pulsar/modulebase/Rank3Builder.hpp>
 
 namespace pulsar_scf {
 
-class Metric: public pulsar::OneElectronMatrix {
+class Metric: public pulsar::MatrixBuilder {
 public:
-    Metric(ID_t id):OneElectronMatrix(id){}
+    Metric(ID_t id):MatrixBuilder(id){}
     ReturnType calculate_(const std::string & key,
                           unsigned int deriv,
                           const pulsar::Wavefunction & wfn,

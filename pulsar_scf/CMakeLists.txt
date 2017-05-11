@@ -4,22 +4,25 @@ find_package(pulsar REQUIRED)
 include(ExternalProject)
 
 get_filename_component(LIBSCF_ROOT ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+foreach(sub_dir builders helpers)
+
+    # Puts all the files into a list called PULSAR_${SUB_DIR}_FILES
+    add_subdirectory(${sub_dir})
+
+    # Make the list a full path and add to the master list
+    string(TOUPPER ${sub_dir} SUB_DIR)
+    foreach(F ${PULSAR_${SUB_DIR}_FILES})
+        list(APPEND PULSAR_SCF_FILE_LIST "${sub_dir}/${F}")
+    endforeach()
+endforeach()
 
 add_library(pulsar_scf MODULE creator.cpp
-                              D.cpp
-                              DF.cpp
-                              F.cpp
-                              G.cpp
-                              H.cpp
                               HelperFunctions.cpp
-                              JK.cpp
-                              S.cpp
                               SCF.cpp
-                              SchwarzScreen.cpp
-                              T.cpp
-                              V.cpp
-                              X.cpp
+                              ${PULSAR_SCF_FILE_LIST}
 )
+
+
 target_compile_options(pulsar_scf PRIVATE ${PULSAR_CXX_STRICT_FLAGS})
 
 target_include_directories(pulsar_scf PRIVATE pulsar ${LIBSCF_ROOT})

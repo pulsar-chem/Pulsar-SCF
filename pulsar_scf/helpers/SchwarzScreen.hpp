@@ -1,5 +1,5 @@
 #pragma once
-#include<pulsar/modulebase/OneElectronMatrix.hpp>
+#include<pulsar/modulebase/MatrixBuilder.hpp>
 
 /** \brief
  *
@@ -16,9 +16,9 @@
  */
 namespace pulsar_scf {
 
-class SchwarzScreen: public pulsar::OneElectronMatrix {
+class SchwarzScreen: public pulsar::MatrixBuilder {
 public:
-    SchwarzScreen(ID_t id):OneElectronMatrix(id){}
+    SchwarzScreen(ID_t id):MatrixBuilder(id){}
     ReturnType calculate_(const std::string & key,
                           unsigned int deriv,
                           const pulsar::Wavefunction & wfn,

@@ -1,7 +1,7 @@
 from pulsar import OptionType
 
 #Stuff common to many modules
-c_mod,base,modpath="c_module","OneElectronMatrix","pulsar_scf.so"
+c_mod,base,modpath="c_module","MatrixFactory","pulsar_scf.so"
 version="0.1a"
 no_options={}
 no_ref,Ryan=[""],["Ryan Richard"]
@@ -31,7 +31,7 @@ minfo["NuclearElectronic"]["options"]={
    }
 minfo["HCore"]["description"]="Builds the core Hamiltonian in the AO basis"
 minfo["HCore"]["options"]={
-      "H_KEYS":(OptionType.ListString,None,True,None,"The keys for the core Hamiltonian"),
+      "H_KEYS":(OptionType.ListString,["PSR_T","PSR_V"],False,None,"The keys for the core Hamiltonian"),
    }
 minfo["Overlap"]["description"]="Builds the overlap matrix in the AO basis"
 minfo["Overlap"]["options"]={
@@ -43,27 +43,27 @@ minfo["JK"]["options"]={
    }
 minfo["DFJK"]["description"]="Builds the J and K matrices using density fitting"
 minfo["DFJK"]["options"]={
-    "METRIC_KEY":(OptionType.String,None,True,None,
+    "METRIC_KEY":(OptionType.String,"PSR_Metric",False,None,
         "The key for metric matrix builder"),
-    "DF_INTS_KEY":(OptionType.String,None,True,None,
+    "DF_INTS_KEY":(OptionType.String,"PSR_3C2E",False,None,
         "The key for three-center, two-electron integral tensor builder")
 }
 minfo["G"]["description"]="Builds G"
 minfo["G"]["options"]={
-         "JK_KEY":(OptionType.String,None,True,None,"The key for the JK builder"),
+         "JK_KEY":(OptionType.String,"PSR_JK",False,None,"The key for the JK builder"),
       }
 minfo["F"]["description"]="Builds the Fock Matrix"
 minfo["F"]["options"]={
-               "G_KEY":(OptionType.String,None,True,None,"The key for the G builder"),
-               "H_KEY":(OptionType.String,None,True,None,"The key for the H builder")
+               "G_KEY":(OptionType.String,"PSR_G",False,None,"The key for the G builder"),
+               "H_KEY":(OptionType.String,"PSR_H",False,None,"The key for the H builder")
             }
 minfo["SchwarzScreen"]["description"]="Builds diagonal elements of ERI"
 minfo["SchwarzScreen"]["options"]={
-    "ERI_INTS_KEY":(OptionType.String,None,True,None,"The key for ERI builder.")
+    "ERI_INTS_KEY":(OptionType.String,"PSR_ERI",False,None,"The key for ERI builder.")
 }
 minfo["Orthogonalizer"]["description"]="Builds a transformation that orthogonalizes the AOs"
 minfo["Orthogonalizer"]["options"]={
-    "S_KEY":(OptionType.String,None,True,None,"The key for building the overlap matrix")
+    "S_KEY":(OptionType.String,"PSR_S",False,None,"The key for building the overlap matrix")
 }
 minfo["CoreDensity"]={
   "type":c_mod,
@@ -74,10 +74,12 @@ minfo["CoreDensity"]={
   "refs":no_ref,
   "description":"Returns the energy and wavefunction for a set of non-interacting electrons",
   "options":{
-    "H_KEY":(OptionType.String,None,True,None,"The key for the H builder"),
-    "S_KEY":(OptionType.String,None,True,None,"The key for the S builder"),
+    "H_KEY":(OptionType.String,"PSR_H",False,None,"The key for the H builder"),
+    "S_KEY":(OptionType.String,"PSR_S",False,None,"The key for the S builder"),
   }
 }
+
+
 minfo["SCF"]={
   "type":c_mod,
   "base":"EnergyMethod",
@@ -87,12 +89,14 @@ minfo["SCF"]={
   "refs":no_ref,
   "description":"Runs an SCF computation",
   "options":{
-    "H_KEY":(OptionType.String,None,True,None,"The key for the H builder"),
-    "F_KEY":(OptionType.String,None,True,None,"The key for the F builder"),
-    "S_KEY":(OptionType.String,None,True,None,"The key for the S builder"),
-    "X_KEY":(OptionType.String,None,True,None,"The key for the X builder")
+    "H_KEY":(OptionType.String,"PSR_H",False,None,"The key for the H builder"),
+    "F_KEY":(OptionType.String,"PSR_F",False,None,"The key for the F builder"),
+    "S_KEY":(OptionType.String,"PSR_S",False,None,"The key for the S builder"),
+    "X_KEY":(OptionType.String,"PSR_X",False,None,"The key for the X builder")
   }
 }
+
+
 minfo["DFInts"]={
   "type":c_mod,
   "base":"Rank3Builder",

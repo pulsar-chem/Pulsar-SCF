@@ -1,7 +1,7 @@
-#include "pulsar_scf/JK.hpp"
+#include "pulsar_scf/builders/JK.hpp"
 #include "pulsar_scf/HelperFunctions.hpp"
 #include <pulsar/modulebase/FourCenterIntegral.hpp>
-#include <pulsar/modulebase/OneElectronMatrix.hpp>
+#include <pulsar/modulebase/MatrixBuilder.hpp>
 #include <pulsar/modulebase/Rank3Builder.hpp>
 #include <memory>
 #include <pulsar/math/EigenImpl.hpp>
@@ -10,7 +10,7 @@ using namespace pulsar;
 using matrix_type=EigenMatrixImpl::matrix_type;
 using tensor_type=EigenTensorImpl<3>::tensor_type;
 using tensor_matrix=Eigen::TensorMap<Eigen::Tensor<const double,2>>;
-using ReturnType=OneElectronMatrix::ReturnType;
+using ReturnType=MatrixBuilder::ReturnType;
 namespace pulsar_scf {
 
 
@@ -115,7 +115,7 @@ void DFJK::make_coefs(unsigned int deriv,
 {
     const size_t nbf1=bs1.n_functions(),nbf2=bs2.n_functions(),ndf=dfbs.n_functions();
     const auto metric_ints=
-            create_child_from_option<OneElectronMatrix>("METRIC_KEY");
+            create_child_from_option<MatrixBuilder>("METRIC_KEY");
     const auto df_ints=
             create_child_from_option<Rank3Builder>("DF_INTS_KEY");
     auto Jmetric =

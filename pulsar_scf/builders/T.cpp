@@ -1,11 +1,11 @@
-#include "pulsar_scf/T.hpp"
+#include "pulsar_scf/builders/T.hpp"
 #include "pulsar_scf/MatrixFillFxns.hpp"
 #include <pulsar/modulebase/TwoCenterIntegral.hpp>
 #include <memory>
 
 using namespace pulsar;
 using matrix_type=EigenMatrixImpl::matrix_type;
-using ReturnType=OneElectronMatrix::ReturnType;
+using ReturnType=MatrixBuilder::ReturnType;
 namespace pulsar_scf {
 
 ReturnType TElectronic:: calculate_(const std::string &,

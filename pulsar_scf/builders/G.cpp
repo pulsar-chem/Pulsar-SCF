@@ -1,10 +1,10 @@
-#include "pulsar_scf/G.hpp"
+#include "pulsar_scf/builders/G.hpp"
 #include <memory>
 #include <Eigen/Dense>
 
 using namespace pulsar;
 using matrix_type=EigenMatrixImpl::matrix_type;
-using ReturnType=OneElectronMatrix::ReturnType;
+using ReturnType=MatrixBuilder::ReturnType;
 namespace pulsar_scf {
 
 ReturnType G::calculate_(const std::string &,
@@ -13,7 +13,7 @@ ReturnType G::calculate_(const std::string &,
                                      const BasisSet &bs1,
                                      const BasisSet &bs2)
 {
-    const auto JK=create_child_from_option<OneElectronMatrix>("JK_KEY")
+    const auto JK=create_child_from_option<MatrixBuilder>("JK_KEY")
                     ->calculate("",deriv,wfn,bs1,bs2);
     const auto J=*convert_to_eigen(*JK[0]);
     const auto K=*convert_to_eigen(*JK[1]);

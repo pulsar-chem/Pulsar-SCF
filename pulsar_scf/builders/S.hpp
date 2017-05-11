@@ -1,11 +1,11 @@
 #pragma once
-#include <pulsar/modulebase/OneElectronMatrix.hpp>
+#include <pulsar/modulebase/MatrixBuilder.hpp>
 
 namespace pulsar_scf {
 
-class HCore: public pulsar::OneElectronMatrix {
+class Overlap: public pulsar::MatrixBuilder {
 public:
-    HCore(ID_t id):OneElectronMatrix(id){}
+    Overlap(ID_t id):MatrixBuilder(id){}
     ReturnType calculate_(const std::string & key,
                           unsigned int deriv,
                           const pulsar::Wavefunction & wfn,

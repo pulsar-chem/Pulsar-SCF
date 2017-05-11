@@ -1,6 +1,6 @@
-#include "pulsar_scf/D.hpp"
+#include "pulsar_scf/builders/D.hpp"
 #include "pulsar_scf/HelperFunctions.hpp"
-#include <pulsar/modulebase/OneElectronMatrix.hpp>
+#include <pulsar/modulebase/MatrixBuilder.hpp>
 #include <memory>
 #include <Eigen/Dense>
 
@@ -13,9 +13,9 @@ DerivReturnType CoreDensity::deriv_(size_t deriv,
 {
     const auto bs=wfn.system->get_basis_set("PRIMARY");
     auto occs=guess_occ(wfn);
-    const auto H=*convert_to_eigen(*create_child_from_option<OneElectronMatrix>("H_KEY")
+    const auto H=*convert_to_eigen(*create_child_from_option<MatrixBuilder>("H_KEY")
                     ->calculate("",deriv,wfn,bs,bs)[0]);
-    const auto S=*convert_to_eigen(*create_child_from_option<OneElectronMatrix>("S_KEY")
+    const auto S=*convert_to_eigen(*create_child_from_option<MatrixBuilder>("S_KEY")
                     ->calculate("",deriv,wfn,bs,bs)[0]);
     Eigen::GeneralizedSelfAdjointEigenSolver<matrix_type> eSC(H, S);
     matrix_type C = eSC.eigenvectors().leftCols(5);

@@ -1,11 +1,11 @@
 #pragma once
-#include <pulsar/modulebase/OneElectronMatrix.hpp>
+#include <pulsar/modulebase/MatrixBuilder.hpp>
 
 namespace pulsar_scf {
 
-class G: public pulsar::OneElectronMatrix {
+class G: public pulsar::MatrixBuilder {
 public:
-    G(ID_t id):OneElectronMatrix(id){}
+    G(ID_t id):MatrixBuilder(id){}
     ReturnType calculate_(const std::string & key,
                           unsigned int deriv,
                           const pulsar::Wavefunction & wfn,
