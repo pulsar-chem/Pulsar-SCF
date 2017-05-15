@@ -22,15 +22,15 @@ def make_wf():
     O=psr.create_atom([0.00000,Oy,0.00000],8)
     BI=psr.BasisInfo()
     BI.shells=[O1s,O2s,O2p]
-    O.basis_sets={"PRIMARY":BI}
+    O.basis_sets={"PRIMARY":BI,"FITTING":BI}
     H1=psr.create_atom([Hx,Hy,0.00000],1)
     BI=psr.BasisInfo()
     BI.shells=[H1s]
-    H1.basis_sets={"PRIMARY":BI}
+    H1.basis_sets={"PRIMARY":BI,"FITTING":BI}
     H2=psr.create_atom([-Hx,Hy,0.00000],1)
     BI=psr.BasisInfo()
     BI.shells=[H1s]
-    H2.basis_sets={"PRIMARY":BI}
+    H2.basis_sets={"PRIMARY":BI,"FITTING":BI}
     MyU.insert(O)
     MyU.insert(H1)
     MyU.insert(H2)

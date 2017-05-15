@@ -10,11 +10,11 @@ corr_ints=[2.06862805800996,0.378364253734954,0,1.82597944548123e-17,0,0.0616957
 def run(mm):
     tester = psr.PyTester("Testing Building of the 2 electron, 3 center integrals")
     wf=make_wf()
-    mm.load_module("pulsar_libint","DF3C2E","DF Ints builder")
-    mm.load_module("pulsar_scf","DFInts","DFInts")
-    mm.change_option("DFInts","DF_INTS_KEY","DF Ints builder")
+    mm.load_supermodule("pulsar_libint")
+    mm.load_supermodule("pulsar_scf")
+    mm.change_option("PSR_3C2E","DF_INTS_KEY","LIBINT_3C2E")
     bs=wf.system.get_basis_set("PRIMARY")
-    ints=mm.get_module("DFInts",0).calculate("???",0,wf,bs,bs,bs)[0]
+    ints=mm.get_module("PSR_3C2E",0).calculate("???",0,wf,bs,bs,bs)[0]
     dims=ints.sizes()
     flat_ints=[]
     for i in range(dims[0]):

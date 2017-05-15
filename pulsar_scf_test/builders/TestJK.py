@@ -21,45 +21,49 @@ corr_K=[-19.7015,      -3.44228,  -2.23346e-17,   -0.00276828,   -2.6963e-33,   
         -0.59299,      -1.52381,    0.705402,     -0.548496,  -2.21447e-16,     -0.378178,     -0.645615
 ]
 
+corr_J_DF=[18.0229,      3.57363, -1.72456e-17,    0.0108954,            0,     0.581893,     0.581893,
+           3.57363,      8.77827, -3.32715e-17,    0.0282485,            0,      2.69973,      2.69973,
+      -1.72456e-17, -3.32715e-17,      8.76241,  4.52858e-17,            0,      1.67385,     -1.67385,
+         0.0108954,    0.0282485,  4.52858e-17,      8.77462, -1.33638e-51,      1.31232,      1.31232,
+                 0,            0,            0, -1.33638e-51,      8.79376,  7.70372e-34,  7.70372e-34,
+          0.581893,      2.69973,      1.67385,      1.31232,  7.70372e-34,      4.54872,     0.982587,
+          0.581893,      2.69973,     -1.67385,      1.31232,  7.70372e-34,     0.982587,      4.54872
+]
+
+corr_K_DF=[-17.1411,     -3.23774,  1.24312e-17,    0.0054105,  -5.3926e-33,    -0.581427,    -0.581427,
+           -3.23774,     -5.31048,   4.0495e-17,   -0.0366569, -3.38964e-32,       -1.486,       -1.486,
+        2.18274e-17,  1.25361e-17,     -3.82877, -9.32084e-17,  9.93714e-18,     -0.59825,      0.59825,
+          0.0054105,   -0.0366569,  -7.1537e-17,     -3.81804,  6.03972e-31,    -0.471044,    -0.471044,
+       -9.62965e-35, -6.08594e-32,  9.93714e-18,  5.91838e-31,     -3.82841, -1.47209e-16,  1.47209e-16,
+          -0.581427,       -1.486,     -0.59825,    -0.471044, -1.47209e-16,    -0.590544,    -0.385865,
+          -0.581427,       -1.486,      0.59825,    -0.471044,  1.47209e-16,    -0.385865,    -0.590544
+]
+
 def run(mm):
     tester = psr.PyTester("Testing JK builder")
-    mm.load_module("pulsar_libint","NuclearElectron","V builder")
-    mm.load_module("pulsar_libint","Kinetic","T builder")
-    mm.load_module("pulsar_libint","Overlap","S builder")
-    mm.load_module("pulsar_libint","ERI","ERI")
-    mm.load_module("pulsar_libint","Metric","Metric builder")
-    mm.load_module("pulsar_libint","DF3C2E","DF Ints builder")
-    mm.load_module("pulsar_scf","TElectronic","T")
-    mm.load_module("pulsar_scf","NuclearElectronic","V")
-    mm.load_module("pulsar_scf","HCore","H")
-    mm.load_module("pulsar_scf","Overlap","S")
-    mm.load_module("pulsar_scf","CoreDensity","DCore")
-    mm.load_module("pulsar_scf","JK","JK")
-    mm.load_module("pulsar_scf","DFJK","DFJK")
-    mm.load_module("pulsar_scf","Metric","Metric")
-    mm.load_module("pulsar_scf","DFInts","DFInts")
-    mm.change_option("V","V_INTS_KEY","V builder")
-    mm.change_option("T","T_INTS_KEY","T builder")
-    mm.change_option("S","S_INTS_KEY","S builder")
-    mm.change_option("H","H_KEYS",["T","V"])
-    mm.change_option("DCore","H_KEY","H")
-    mm.change_option("DCore","S_KEY","S")
-    mm.change_option("JK","ERI_KEY","ERI")
-    mm.change_option("Metric","METRIC_INTS_KEY","Metric builder")
-    mm.change_option("DFInts","DF_INTS_KEY","DF Ints builder")
-    mm.change_option("DFJK","METRIC_KEY","Metric")
-    mm.change_option("DFJK","DF_INTS_KEY","DFInts")
+    mm.load_supermodule("pulsar_libint")
+    mm.load_supermodule("pulsar_scf")
+    mm.change_option("PSR_V","V_INTS_KEY","LIBINT_V")
+    mm.change_option("PSR_T","T_INTS_KEY","LIBINT_T")
+    mm.change_option("PSR_S","S_INTS_KEY","LIBINT_S")
+    mm.change_option("PSR_JK","ERI_KEY","LIBINT_ERI")
+    mm.change_option("PSR_Metric","METRIC_INTS_KEY","LIBINT_Metric")
+    mm.change_option("PSR_3C2E","DF_INTS_KEY","LIBINT_3C2E")
+
     wf=make_wf()
     bs=wf.system.get_basis_set("PRIMARY")
-    guess=mm.get_module("DCore",0).deriv(0,wf)[0]
-    JK=mm.get_module("JK",0).calculate("???",0,guess,bs,bs)
+    guess=mm.get_module("PSR_DCore",0).deriv(0,wf)[0]
+    JK=mm.get_module("PSR_JK",0).calculate("???",0,guess,bs,bs)
     J=np.array(JK[0].get_matrix())
     K=np.array(JK[1].get_matrix())
     tester.test_double_vector("J",J.flatten(),corr_J)
     tester.test_double_vector("K",K.flatten(),corr_K)
 
-    JK=mm.get_module("DFJK",0).calculate("",0,guess,bs,bs)
-
+    JK=mm.get_module("PSR_DFJK",0).calculate("",0,guess,bs,bs)
+    J=np.array(JK[0].get_matrix())
+    K=np.array(JK[1].get_matrix())
+    tester.test_double_vector("DF-J",J.flatten(),corr_J_DF)
+    tester.test_double_vector("DF-K",K.flatten(),corr_K_DF)
     tester.print_results()
     return tester.nfailed()
 

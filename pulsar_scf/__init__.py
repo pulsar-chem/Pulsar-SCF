@@ -14,5 +14,6 @@ def initialize(mm):
     mm.load_module("pulsar_scf","CoreDensity","PSR_DCore")
     mm.load_module("pulsar_scf","JK","PSR_JK")
     mm.load_module("pulsar_scf","DFJK","PSR_DFJK")
+    mm.load_module("pulsar_scf","DFCoef","PSR_DFCoef")
     mm.load_module("pulsar_scf","SCF","PSR_SCF")
     mm.load_module("pulsar_scf","SchwarzScreen","PSR_Sieve")

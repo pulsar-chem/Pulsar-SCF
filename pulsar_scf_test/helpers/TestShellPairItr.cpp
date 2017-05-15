@@ -1,4 +1,4 @@
-#include <pulsar_scf/ShellPairItr.hpp>
+#include <pulsar_scf/helpers/ShellPairItr.hpp>
 #include <pulsar/testing/CppTester.hpp>
 #include "../TestCommon.hpp"
 using namespace pulsar;

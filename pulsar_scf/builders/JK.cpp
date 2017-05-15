@@ -107,27 +107,8 @@ ReturnType JK::calculate_(const std::string &,
             std::make_shared<EigenMatrixImpl>(std::move(K_final))};
 }
 
-void DFJK::make_coefs(unsigned int deriv,
-                      const Wavefunction& wfn,
-                      const BasisSet& dfbs,
-                      const BasisSet& bs1,
-                      const BasisSet& bs2)
-{
-    const size_t nbf1=bs1.n_functions(),nbf2=bs2.n_functions(),ndf=dfbs.n_functions();
-    const auto metric_ints=
-            create_child_from_option<MatrixBuilder>("METRIC_KEY");
-    const auto df_ints=
-            create_child_from_option<Rank3Builder>("DF_INTS_KEY");
-    auto Jmetric =
-            *convert_to_eigen(*metric_ints->calculate("",deriv,wfn,bs1,bs2)[0]);
-    matrix_type Linv_temp=
-          Jmetric.llt().matrixL().solve(matrix_type::Identity(nbf1,nbf2));
-    tensor_type Pls=
-          *convert_to_eigen(*df_ints->calculate("",deriv,wfn,dfbs,bs1,bs2)[0]);
-    tensor_matrix Linv(Linv_temp.data(), ndf,ndf);
-    std::array<Eigen::IndexPair<int>,1> idx({Eigen::IndexPair<int>(1,0)});
-    d_Qls_=std::make_unique<Eigen::Tensor<double,3>>(Linv.contract(Pls,idx));
-}
+using idx_t=Eigen::IndexPair<int>;
+template<size_t n> using idx_array=std::array<idx_t,n>;
 
 ReturnType DFJK::calculate_(const std::string & key,
                  unsigned int deriv,
@@ -135,38 +116,45 @@ ReturnType DFJK::calculate_(const std::string & key,
                  const BasisSet & bs1,
                  const BasisSet & bs2)
 {
-    const size_t nbf1=bs1.n_functions(),nbf2=bs2.n_functions();    
-    const BasisSet& dfbs=wfn.system->get_basis_set("PRIMARY");
-    const size_t ndf=dfbs.n_functions();
-    if(!d_Qls_)make_coefs(deriv,wfn,dfbs,bs1,bs2);
-
+    const auto& dfbs_name=options().get<std::string>("FITTING_BASIS_KEY");
+    const BasisSet& dfbs=wfn.system->get_basis_set(dfbs_name);
+    auto coef_generator=create_child_from_option<Rank3Builder>("FITTING_COEF_KEY");
+    const auto d_Qls=*convert_to_eigen(
+                *coef_generator->calculate("",deriv,wfn,dfbs,bs1,bs2)[0]
+    );
+    //TODO: Handle differently sized C left and C right
     const auto C=*convert_to_eigen(*wfn.cmat->get(Irrep::A,Spin::alpha));
-    const size_t nocc=C.cols();
-    tensor_matrix C_temp(C.data(),nbf1,nocc);
-    std::array<Eigen::IndexPair<int>,1> idx({Eigen::IndexPair<int>(1,0)});
-    tensor_type d_Qis=d_Qls_->contract(C_temp,idx);
-    for(size_t Q=0;Q<ndf;++Q)
-        for(size_t i=0;i<nocc;++i)
-            for(size_t l=0;l<nbf1;++l)
-                std::cout<<d_Qis(Q,i,l)<<std::endl;
-    matrix_type J=matrix_type::Zero(nbf1,nbf2),
-                K=matrix_type::Zero(nbf1,nbf2);
-    //tensor_matrix J_temp(J.data(),nbf1,nbf2),K_temp(K.data(),nbf1,nbf2);
-    //J_temp=C_temp.contract()
 
-    for(size_t mu=0;mu<nbf1;++mu)
-        for(size_t nu=0;nu<nbf2;++nu)
-            for(size_t lambda=0;lambda<nbf1;++lambda)
-                for(size_t sigma=0;sigma<nbf2;++sigma)
-                    for(size_t Q=0;Q<ndf;++Q)
-                        for(size_t i=0;i<C.cols();++i)
-                    {
-                        J(mu,nu)+=C(lambda,i)*C.transpose()(i,sigma)*(*d_Qls_)(Q,mu,nu)*(*d_Qls_)(Q,lambda,sigma);
-                        K(mu,nu)-=C(lambda,i)*C.transpose()(i,sigma)*(*d_Qls_)(Q,mu,sigma)*(*d_Qls_)(Q,lambda,nu);
-                    }
-    //std::cout<<J<<std::endl;
-    //std::cout<<K<<std::endl;
-    exit(0);
+    const size_t nbf1=bs1.n_functions(),nbf2=bs2.n_functions(),nocc=C.cols();
+
+    tensor_matrix C_temp(C.data(),nbf1,nocc);
+
+    auto J=std::make_shared<matrix_type>(matrix_type::Zero(nbf1,nbf2)),
+         K=std::make_shared<matrix_type>(matrix_type::Zero(nbf1,nbf2));
+
+    Eigen::TensorMap<Eigen::Tensor<double,2>> J_temp(J->data(),nbf1,nbf2),
+                                              K_temp(K->data(),nbf1,nbf2);
+
+    //Common intermediate: d_iQS=C_li(Q|ls)
+    tensor_type d_iQs=
+            C_temp.contract(d_Qls,idx_array<1>({idx_t({0,1})}));
+
+    //J intermediate: d_Q=C_si(Q|is)
+    Eigen::Tensor<double,1> d_Q=
+            d_iQs.contract(C_temp,idx_array<2>({idx_t({0,1}),idx_t({2,0})}));
+
+    //J_mn=d_Q(mn|Q)
+    J_temp+=d_Q.contract(d_Qls,idx_array<1>({idx_t({0,0})}));
+
+    //K_mn=(mi|Q)(Q|in)
+    K_temp-=d_iQs.contract(d_iQs,idx_array<2>({idx_t({0,0}),idx_t({1,1})}));
+
+    //TODO: worry about coefficients so not hard-coded to RHF
+    (*J)*=2.0;
+    (*K)*=4.0;
+
+    return {std::make_shared<EigenMatrixImpl>(J),
+            std::make_shared<EigenMatrixImpl>(K)};
 
 }
 

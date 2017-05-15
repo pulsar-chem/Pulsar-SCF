@@ -15,23 +15,15 @@ corr_D=[1.06501,    -0.285217, -2.19377e-18,   -0.0195534, -9.13187e-33,    0.03
 
 def run(mm):
     tester = psr.PyTester("Testing core guess")
-    mm.load_module("pulsar_libint","NuclearElectron","V builder")
-    mm.load_module("pulsar_libint","Kinetic","T builder")
-    mm.load_module("pulsar_libint","Overlap","S builder")
-    mm.load_module("pulsar_scf","TElectronic","T")
-    mm.load_module("pulsar_scf","NuclearElectronic","V")
-    mm.load_module("pulsar_scf","HCore","H")
-    mm.load_module("pulsar_scf","Overlap","S")
-    mm.load_module("pulsar_scf","CoreDensity","DCore")
-    mm.change_option("V","V_INTS_KEY","V builder")
-    mm.change_option("T","T_INTS_KEY","T builder")
-    mm.change_option("S","S_INTS_KEY","S builder")
-    mm.change_option("H","H_KEYS",["T","V"])
-    mm.change_option("DCore","H_KEY","H")
-    mm.change_option("DCore","S_KEY","S")
+    mm.load_supermodule("pulsar_libint")
+    mm.load_supermodule("pulsar_scf")
+    mm.change_option("PSR_V","V_INTS_KEY","LIBINT_V")
+    mm.change_option("PSR_T","T_INTS_KEY","LIBINT_T")
+    mm.change_option("PSR_S","S_INTS_KEY","LIBINT_S")
+
     wf=make_wf()
     bs=wf.system.get_basis_set("PRIMARY")
-    guess=mm.get_module("DCore",0).deriv(0,wf)[0]
+    guess=mm.get_module("PSR_DCore",0).deriv(0,wf)[0]
     temp=guess.opdm.get(psr.Irrep.A,psr.Spin.alpha).get_matrix()
     D=np.array(temp)
     tester.test_double_vector("Core Guess",D.flatten(),corr_D)

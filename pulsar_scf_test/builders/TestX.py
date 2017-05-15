@@ -24,13 +24,11 @@ corr_Xinv=[-0.150430044678067,                   0, 0.648535207242568,          
 def run(mm):
     tester = psr.PyTester("Testing Building of the orthogonalizing matrix")
     wf=make_wf()
-    mm.load_module("pulsar_libint","Overlap","S builder")
-    mm.load_module("pulsar_scf","Overlap","S")
-    mm.load_module("pulsar_scf","Orthogonalizer","X")
-    mm.change_option("S","S_INTS_KEY","S builder")
-    mm.change_option("X","S_KEY","S")
+    mm.load_supermodule("pulsar_libint")
+    mm.load_supermodule("pulsar_scf")
+    mm.change_option("PSR_S","S_INTS_KEY","LIBINT_S")
     bs=wf.system.get_basis_set("PRIMARY")
-    X=mm.get_module("X",0).calculate("???",0,wf,bs,bs)
+    X=mm.get_module("PSR_X",0).calculate("???",0,wf,bs,bs)
     X,Xinv=np.array(X[0].get_matrix()),np.array(X[1].get_matrix())
     for i,j in zip(X.flatten(),corr_X):
         desc="X: "+str(i)+","+str(j)

@@ -43,10 +43,10 @@ minfo["JK"]["options"]={
    }
 minfo["DFJK"]["description"]="Builds the J and K matrices using density fitting"
 minfo["DFJK"]["options"]={
-    "METRIC_KEY":(OptionType.String,"PSR_Metric",False,None,
-        "The key for metric matrix builder"),
-    "DF_INTS_KEY":(OptionType.String,"PSR_3C2E",False,None,
-        "The key for three-center, two-electron integral tensor builder")
+    "FITTING_BASIS_KEY":(OptionType.String,"FITTING",False,None,
+        "The key for the fitting basis set"),
+    "FITTING_COEF_KEY":(OptionType.String,"PSR_DFCoef",False,None,
+        "The key for module that builds the density fitting coeficients")
 }
 minfo["G"]["description"]="Builds G"
 minfo["G"]["options"]={
@@ -107,5 +107,20 @@ minfo["DFInts"]={
   "description":"Builds the 3 center, 2 e integrals",
   "options":{
     "DF_INTS_KEY":(OptionType.String,None,True,None,"The key for the DF integals"),
+  }
+}
+minfo["DFCoef"]={
+  "type":c_mod,
+  "base":"Rank3Builder",
+  "modpath":modpath,
+  "version":version,
+  "authors":Ryan,
+  "refs":no_ref,
+  "description":"Builds the 3 center, 2 e integrals",
+  "options":{
+    "METRIC_KEY":(OptionType.String,"PSR_Metric",False,None,
+        "The key for metric matrix builder"),
+    "DF_INTS_KEY":(OptionType.String,"PSR_3C2E",False,None,
+        "The key for three-center, two-electron integral tensor builder")
   }
 }

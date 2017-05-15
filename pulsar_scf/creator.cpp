@@ -26,6 +26,7 @@ ModuleCreationFuncs insert_supermodule(void){
     cf.add_cpp_creator<pulsar_scf::Overlap>("Overlap");
     cf.add_cpp_creator<pulsar_scf::Metric>("Metric");
     cf.add_cpp_creator<pulsar_scf::DFInts>("DFInts");
+    cf.add_cpp_creator<pulsar_scf::DFCoef>("DFCoef");
     cf.add_cpp_creator<pulsar_scf::TElectronic>("TElectronic");
     cf.add_cpp_creator<pulsar_scf::SCF>("SCF");
     cf.add_cpp_creator<pulsar_scf::SchwarzScreen>("SchwarzScreen");

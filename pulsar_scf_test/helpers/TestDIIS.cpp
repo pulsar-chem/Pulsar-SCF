@@ -1,4 +1,4 @@
-#include <pulsar_scf/DIIS.hpp>
+#include <pulsar_scf/helpers/DIIS.hpp>
 #include <pulsar/testing/CppTester.hpp>
 #include <Eigen/Dense>
 #include <libint2/diis.h>

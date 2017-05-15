@@ -5,6 +5,8 @@
 
 using namespace pulsar;
 using matrix_type=EigenMatrixImpl::matrix_type;
+using tensor_type=EigenTensorImpl<3>::tensor_type;
+using tensor_matrix=Eigen::TensorMap<Eigen::Tensor<const double,2>>;
 
 namespace pulsar_scf {
 
@@ -69,5 +71,27 @@ Rank3Builder::ReturnType DFInts::calculate_(const std::string &,
     return {std::make_shared<EigenTensorImpl<3>>(std::move(ints))};
 }
 
+Rank3Builder::ReturnType DFCoef::calculate_(const std::string&,
+                                            unsigned int deriv,
+                                            const Wavefunction& wfn,
+                                            const pulsar::BasisSet& dfbs,
+                                            const pulsar::BasisSet& bs1,
+                                            const pulsar::BasisSet& bs2)
+{
+    const size_t ndf=dfbs.n_functions();
+    const auto metric_ints=
+            create_child_from_option<MatrixBuilder>("METRIC_KEY");
+    const auto df_ints=
+            create_child_from_option<Rank3Builder>("DF_INTS_KEY");
+    auto Jmetric =
+            *convert_to_eigen(*metric_ints->calculate("",deriv,wfn,dfbs,dfbs)[0]);
+    matrix_type Linv_temp=
+          Jmetric.llt().matrixL().solve(matrix_type::Identity(ndf,ndf));
+    tensor_type d_Qls=
+          *convert_to_eigen(*df_ints->calculate("",deriv,wfn,dfbs,bs1,bs2)[0]);
+    tensor_matrix Linv(Linv_temp.data(), ndf,ndf);
+    std::array<Eigen::IndexPair<int>,1> idx({Eigen::IndexPair<int>(1,0)});
+    return {std::make_shared<EigenTensorImpl<3>>(std::move(Linv.contract(d_Qls,idx)))};
+}
 
 }//End namespace
