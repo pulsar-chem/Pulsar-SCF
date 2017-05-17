@@ -1,12 +1,29 @@
 #include "pulsar_scf/builders/V.hpp"
-#include "pulsar_scf/MatrixFillFxns.hpp"
+#include "pulsar_scf/HelperFunctions.hpp"
 #include <pulsar/modulebase/TwoCenterIntegral.hpp>
+#include <bphash/Hash.hpp>
 #include <memory>
 
 using namespace pulsar;
+using namespace std;
+
 using matrix_type=EigenMatrixImpl::matrix_type;
 using ReturnType=MatrixBuilder::ReturnType;
 namespace pulsar_scf {
+
+const string V_opt="V_INTS_KEY";
+
+MatrixBuilder::HashType NuclearElectronic::my_hash_(const string &,
+                                               unsigned int deriv,
+                                               const Wavefunction &wfn,
+                                               const BasisSet &bs1,
+                                               const BasisSet &bs2)
+{
+    auto V_key=options().get<string>(V_opt);
+    auto VInts=create_child_from_option<TwoCenterIntegral>(V_opt);
+    //The result of this module is entirely determined by the TwoCenterIntegral
+    return V_key+VInts->my_hash(deriv,wfn,bs1,bs2);
+}
 
 ReturnType NuclearElectronic:: calculate_(const std::string &,
                                      unsigned int deriv,
@@ -14,14 +31,10 @@ ReturnType NuclearElectronic:: calculate_(const std::string &,
                                      const BasisSet &bs1,
                                      const BasisSet &bs2)
 {
-    auto VInts=create_child_from_option<TwoCenterIntegral>("V_INTS_KEY");
-    VInts->initialize(deriv,wfn,bs1,bs2);
-    const bool is_symmetric= bs1==bs2;
-    auto V(std::move(is_symmetric ?
-                       detail_::fill_symmetric<matrix_type>(VInts,bs1) :
-                       detail_::fill_asymmetric<matrix_type>(VInts,bs1,bs2)
-           ));
-    return {std::make_shared<EigenMatrixImpl>(std::move(V))};
+    if(options().get<bool>("FORCE_CACHE"))
+        throw PulsarException("Value was not in cache and FORCE_CACHE=true");
+    auto VInts=create_child_from_option<TwoCenterIntegral>(V_opt);
+    return matrix_builder_kernel(deriv,wfn,bs1,bs2,*VInts);
 }
 
 }//End namespace

@@ -10,6 +10,12 @@ public:
                           const pulsar::Wavefunction & wfn,
                           const pulsar::BasisSet & bs1,
                           const pulsar::BasisSet & bs2);
+
+    HashType my_hash_(const std::string & key,
+                       unsigned int deriv,
+                      const pulsar::Wavefunction &wfn,
+                      const pulsar::BasisSet &bs1,
+                      const pulsar::BasisSet &bs2);
 };
 
 class DFJK: public pulsar::MatrixBuilder {
@@ -20,6 +26,12 @@ public:
                           const pulsar::Wavefunction & wfn,
                           const pulsar::BasisSet & bs1,
                           const pulsar::BasisSet & bs2);
+
+    HashType my_hash_(const std::string & key,
+                       unsigned int deriv,
+                      const pulsar::Wavefunction &wfn,
+                      const pulsar::BasisSet &bs1,
+                      const pulsar::BasisSet &bs2);
 };
 
 

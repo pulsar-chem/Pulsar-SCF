@@ -13,6 +13,12 @@ public:
                           const pulsar::Wavefunction & wfn,
                           const pulsar::BasisSet & bs1,
                           const pulsar::BasisSet & bs2);
+
+    HashType my_hash_(const std::string & key,
+                      unsigned int deriv,
+                      const pulsar::Wavefunction &wfn,
+                      const pulsar::BasisSet &bs1,
+                      const pulsar::BasisSet &bs2);
 };
 
 ///Builds integrals (mu nu | Q)
@@ -25,6 +31,13 @@ public:
                           const pulsar::BasisSet & bs1,
                           const pulsar::BasisSet & bs2,
                           const pulsar::BasisSet & bs3);
+
+    HashType my_hash_(const std::string & key,
+                      unsigned int deriv,
+                      const pulsar::Wavefunction &wfn,
+                      const pulsar::BasisSet &bs1,
+                      const pulsar::BasisSet &bs2,
+                      const pulsar::BasisSet &bs3);
 };
 
 ///Builds d_Qmn
@@ -38,6 +51,13 @@ public:
                           const pulsar::BasisSet & bs2,
                           const pulsar::BasisSet & bs3
                           );
+
+    HashType my_hash_(const std::string & key,
+                      unsigned int deriv,
+                      const pulsar::Wavefunction &wfn,
+                      const pulsar::BasisSet &bs1,
+                      const pulsar::BasisSet &bs2,
+                      const pulsar::BasisSet &bs3);
 };
 
 }

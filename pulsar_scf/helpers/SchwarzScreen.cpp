@@ -2,11 +2,25 @@
 #include <pulsar/modulebase/FourCenterIntegral.hpp>
 
 using namespace pulsar;
-
+using namespace std;
 using matrix_type=EigenMatrixImpl::matrix_type;
 using ReturnType=MatrixBuilder::ReturnType;
 
 namespace pulsar_scf {
+
+const string ERI_opt="ERI_INTS_KEY";
+
+MatrixBuilder::HashType SchwarzScreen::my_hash_(const string & key,
+                                                unsigned int deriv,
+                                                const Wavefunction & wfn,
+                                                const BasisSet & bs1,
+                                                const BasisSet & bs2)
+{
+    auto eri_key=options().get<string>(ERI_opt);
+    auto eris=create_child_from_option<FourCenterIntegral>(ERI_opt);
+    return eri_key+eris->my_hash(deriv,wfn,bs1,bs2,bs1,bs2);
+}
+
 
 ReturnType SchwarzScreen::calculate_(const std::string &,
                                      unsigned int deriv,
@@ -14,7 +28,7 @@ ReturnType SchwarzScreen::calculate_(const std::string &,
                                      const BasisSet & bs1,
                                      const BasisSet & bs2)
 {
-    auto ERIInts=create_child_from_option<FourCenterIntegral>("ERI_INTS_KEY");
+    auto ERIInts=create_child_from_option<FourCenterIntegral>(ERI_opt);
     ERIInts->options().change("THRESHOLD",0.0);
     ERIInts->initialize(deriv,wfn,bs1,bs2,bs1,bs2);
     const bool is_symmetric=bs1==bs2;
@@ -33,7 +47,7 @@ ReturnType SchwarzScreen::calculate_(const std::string &,
             if(is_symmetric)S(j,i)=value;
         }
     }
-    return {std::make_shared<EigenMatrixImpl>(std::move(S))};
+    return {make_shared<EigenMatrixImpl>(move(S))};
 
 }
 

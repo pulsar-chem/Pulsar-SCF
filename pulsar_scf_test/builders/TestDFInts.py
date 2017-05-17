@@ -14,7 +14,8 @@ def run(mm):
     mm.load_supermodule("pulsar_scf")
     mm.change_option("PSR_3C2E","DF_INTS_KEY","LIBINT_3C2E")
     bs=wf.system.get_basis_set("PRIMARY")
-    ints=mm.get_module("PSR_3C2E",0).calculate("???",0,wf,bs,bs,bs)[0]
+    da_builder=mm.get_module("PSR_3C2E",0)
+    ints=da_builder.calculate("???",0,wf,bs,bs,bs)[0]
     dims=ints.sizes()
     flat_ints=[]
     for i in range(dims[0]):
@@ -22,6 +23,15 @@ def run(mm):
             for k in range(dims[2]):
                 flat_ints.append(ints.get_value([i,j,k]))
     tester.test_double_vector("3 center, 2 e matrix",flat_ints,corr_ints)
+    da_builder.options().change("FORCE_CACHE",True)
+    ints=da_builder.calculate("???",0,wf,bs,bs,bs)[0]
+    dims=ints.sizes()
+    flat_ints=[]
+    for i in range(dims[0]):
+        for j in range(dims[1]):
+            for k in range(dims[2]):
+                flat_ints.append(ints.get_value([i,j,k]))
+    tester.test_double_vector("Cache 3 center, 2 e matrix",flat_ints,corr_ints)
     tester.print_results()
     return tester.nfailed()
 

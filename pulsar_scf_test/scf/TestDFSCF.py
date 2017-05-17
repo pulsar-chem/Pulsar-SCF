@@ -24,7 +24,7 @@ def run(mm):
     #TODO test wf
     egy=mm.get_module("PSR_SCF",0).deriv(0,guess)[1][0]
 
-    tester.test_double("Energy",-76.00333902407489,egy)
+    tester.test_double("DF-RHF Energy",-76.00333902407489,egy)
     tester.print_results()
     return tester.nfailed()
 

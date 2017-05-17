@@ -28,13 +28,25 @@ def run(mm):
     mm.load_supermodule("pulsar_scf")
     mm.change_option("PSR_S","S_INTS_KEY","LIBINT_S")
     bs=wf.system.get_basis_set("PRIMARY")
-    X=mm.get_module("PSR_X",0).calculate("???",0,wf,bs,bs)
+    X_maker=mm.get_module("PSR_X",0)
+    X=X_maker.calculate("???",0,wf,bs,bs)
     X,Xinv=np.array(X[0].get_matrix()),np.array(X[1].get_matrix())
+    #Only defined up to a sign...
     for i,j in zip(X.flatten(),corr_X):
         desc="X: "+str(i)+","+str(j)
         tester.test_double(desc,abs(float(i)),abs(j))
     for i,j in zip(Xinv.flatten(),corr_Xinv):
         desc="Xinv: "+str(i)+","+str(j)
+        tester.test_double(desc,abs(float(i)),abs(j))
+    X_maker.options().change("FORCE_CACHE",True)
+    X=X_maker.calculate("???",0,wf,bs,bs)
+    X,Xinv=np.array(X[0].get_matrix()),np.array(X[1].get_matrix())
+    #Only defined up to a sign...
+    for i,j in zip(X.flatten(),corr_X):
+        desc="Cache X: "+str(i)+","+str(j)
+        tester.test_double(desc,abs(float(i)),abs(j))
+    for i,j in zip(Xinv.flatten(),corr_Xinv):
+        desc="Cache Xinv: "+str(i)+","+str(j)
         tester.test_double(desc,abs(float(i)),abs(j))
     tester.print_results()
     return tester.nfailed()

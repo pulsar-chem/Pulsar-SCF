@@ -14,7 +14,8 @@ def run(mm):
     mm.change_option("PSR_3C2E","DF_INTS_KEY","LIBINT_3C2E")
     mm.change_option("PSR_Metric","METRIC_INTS_KEY","LIBINT_Metric")
     bs=wf.system.get_basis_set("PRIMARY")
-    ints=mm.get_module("PSR_DFCoef",0).calculate("???",0,wf,bs,bs,bs)[0]
+    dfcoef=mm.get_module("PSR_DFCoef",0)
+    ints=dfcoef.calculate("???",0,wf,bs,bs,bs)[0]
     dims=ints.sizes()
     flat_ints=[]
     for i in range(dims[0]):
@@ -22,6 +23,15 @@ def run(mm):
             for k in range(dims[2]):
                 flat_ints.append(ints.get_value([i,j,k]))
     tester.test_double_vector("d^Q_{mn}",flat_ints,corr_ints)
+    dfcoef.options().change("FORCE_CACHE",True)
+    ints=dfcoef.calculate("???",0,wf,bs,bs,bs)[0]
+    dims=ints.sizes()
+    flat_ints=[]
+    for i in range(dims[0]):
+        for j in range(dims[1]):
+            for k in range(dims[2]):
+                flat_ints.append(ints.get_value([i,j,k]))
+    tester.test_double_vector("Cacheing d^Q_{mn} works",flat_ints,corr_ints)
     tester.print_results()
     return tester.nfailed()
 

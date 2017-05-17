@@ -4,19 +4,38 @@
 #include <memory>
 
 using namespace pulsar;
+using namespace std;
 using matrix_type=EigenMatrixImpl::matrix_type;
 using ReturnType=MatrixBuilder::ReturnType;
+
 namespace pulsar_scf {
 
-///This is flat out stolen from libint2's hartree-fock++.cc routine
+const string S_opt="S_KEY";
 
+MatrixBuilder::HashType Orthogonalizer::my_hash_(const string &,
+                                                  unsigned int deriv,
+                                                  const Wavefunction &wfn,
+                                                  const BasisSet &bs1,
+                                                  const BasisSet &bs2)
+{
+    auto S_key=options().get<string>(S_opt);
+    auto Sbuilder=create_child_from_option<MatrixBuilder>(S_opt);
+    //The result of this module is entirely determined by the TwoCenterIntegral
+    return S_key+Sbuilder->my_hash("",deriv,wfn,bs1,bs2);
+}
+
+
+///This is flat out stolen from libint2's hartree-fock++.cc routine
 ReturnType Orthogonalizer:: calculate_(const std::string &,
                                      unsigned int deriv,
                                      const Wavefunction & wfn,
                                      const BasisSet &bs1,
                                      const BasisSet &bs2)
 {
-    auto S=*convert_to_eigen(*create_child_from_option<MatrixBuilder>("S_KEY")
+    if(options().get<bool>("FORCE_CACHE"))
+        throw PulsarException("Value not in cache and FORCE_CACHE = true");
+
+    auto S=*convert_to_eigen(*create_child_from_option<MatrixBuilder>(S_opt)
                              ->calculate("",deriv,wfn,bs1,bs2)[0]);
     Eigen::SelfAdjointEigenSolver<matrix_type> eig_solver(S);
     auto U = eig_solver.eigenvectors();
@@ -44,8 +63,8 @@ ReturnType Orthogonalizer:: calculate_(const std::string &,
       X = X * U_cond.transpose();
       Xinv = Xinv * U_cond.transpose();
     }
-    return {std::make_shared<EigenMatrixImpl>(std::move(X)),
-            std::make_shared<EigenMatrixImpl>(std::move(Xinv))};
+    return {make_shared<EigenMatrixImpl>(move(X)),
+            make_shared<EigenMatrixImpl>(move(Xinv))};
 }
 
 }//End namespace

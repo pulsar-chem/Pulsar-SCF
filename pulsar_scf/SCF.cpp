@@ -2,6 +2,7 @@
 #include "pulsar_scf/helpers/DIIS.hpp"
 #include "pulsar_scf/HelperFunctions.hpp"
 #include <pulsar/modulebase/MatrixBuilder.hpp>
+#include <numeric>
 
 using namespace pulsar;
 using matrix_type=EigenMatrixImpl::matrix_type;
@@ -31,8 +32,8 @@ DerivReturnType SCF::deriv_(size_t deriv,
     const double comm_conv=1e-6;
     const size_t max_iters=100;
     size_t iter=0;
-
-    const size_t nocc=5;
+    const auto occs=*convert_to_eigen(*guess_occ(wfn)->get(Irrep::A,Spin::alpha));
+    const size_t nocc=std::accumulate(occs.data(),occs.data()+occs.size(),0);
 
     const double ENuc=nuclear_nuclear_repulsion(wfn);
     double oldE=ENuc;
@@ -67,7 +68,7 @@ DerivReturnType SCF::deriv_(size_t deriv,
 
         if(std::fabs(dE)<e_conv && std::fabs(rmsComm)<comm_conv)break;
         oldE=newE;
-        newwfn=update_wfn(newwfn,&C,&D);
+        newwfn=update_wfn(newwfn,&C,&D,&occs);
         ++iter;
     }while(iter<max_iters);
     return {newwfn,{oldE}};

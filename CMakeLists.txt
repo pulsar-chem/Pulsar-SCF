@@ -6,6 +6,7 @@ include(ExternalProject)
 ############################
 # Build type
 ############################
+
 # Default to Release if build type not specified
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")

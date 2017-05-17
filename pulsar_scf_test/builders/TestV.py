@@ -20,10 +20,16 @@ def run(mm):
     mm.load_supermodule("pulsar_scf")
     mm.change_option("PSR_V","V_INTS_KEY","LIBINT_V")
     bs=wf.system.get_basis_set("PRIMARY")
-    T=mm.get_module("PSR_V",0).calculate("???",0,wf,bs,bs)
-    T=np.array(T[0].get_matrix())
-    tester.test_double_vector("nuclear-electron attraction",T.flatten(),corr_T)
+    V_maker = mm.get_module("PSR_V",0)
+    V = V_maker.calculate("???",0,wf,bs,bs)
+    V=np.array(V[0].get_matrix())
+    tester.test_double_vector("nuclear-electron attraction",V.flatten(),corr_T)
+    V_maker.options().change("FORCE_CACHE",True)
+    V = V_maker.calculate("",0,wf,bs,bs)
+    V=np.array(V[0].get_matrix())
+    tester.test_double_vector("nuclear-electron attraction cache works",V.flatten(),corr_T)
     tester.print_results()
+
     return tester.nfailed()
 
 def run_test():
