@@ -1,5 +1,9 @@
 #pragma once
 #include<pulsar/modulebase/MatrixBuilder.hpp>
+#include<pulsar/math/TensorImpl.hpp>
+#include<pulsar/math/MinMax.hpp>
+
+namespace pulsar_scf {
 
 /** \brief
  *
@@ -13,12 +17,52 @@
  *  \f$\langle y,y\rangle\f$ owing to \f$x\f$ and \f$y\f$ being dummy indices)
  *  then we can estimate the magnitude of any mixed inner product by multiplying
  *  their values together.
+ *
+ *  At the end of the day a small integral can still have a large impact on the
+ *  resulting J or K matrix depending on the density matrix, thus the final
+ *  decision is made by multiplying the left and right of the Cauchy-Schwarz
+ *  inequality by the norm of the shell block of the density
  */
-namespace pulsar_scf {
-
-class SchwarzScreen: public pulsar::MatrixBuilder {
+class SchwarzScreen{
+   const Eigen::MatrixXd& metric_;
+   const double threshold_;
+   Eigen::MatrixXd density_;
 public:
-    SchwarzScreen(ID_t id):MatrixBuilder(id){}
+   SchwarzScreen(const Eigen::MatrixXd& metric_,
+                 const Eigen::MatrixXd& density,
+                 const pulsar::BasisSet& bs,
+                 double threshold_=std::numeric_limits<double>::epsilon());
+   //Converts from generic density matrices
+   SchwarzScreen(const Eigen::MatrixXd& metric_,
+                 const pulsar::TensorImpl<2,double>& density,
+                 const pulsar::BasisSet& bs,
+                 double threshold_=std::numeric_limits<double>::epsilon()):
+       SchwarzScreen(metric_,*pulsar::convert_to_eigen(density),bs,threshold_)
+   {}
+
+   ///Returns true if this quartet is greater than the threshold
+   bool is_good(const std::array<size_t,4>& quartet)const
+   {
+       //These are the blocks touched by this quartet
+       const double max_d= pulsar::max(
+                   density_(quartet[0],quartet[1]),
+                   density_(quartet[2],quartet[3]),
+                   density_(quartet[0],quartet[2]),
+                   density_(quartet[0],quartet[3]),
+                   density_(quartet[1],quartet[2]),
+                   density_(quartet[1],quartet[3])
+       );
+       return max_d*metric_(quartet[0],quartet[1])*
+               metric_(quartet[2],quartet[3])>threshold_;
+   }
+};
+
+ /**
+ *  The results of this builder are a matrix \f$S_{ij}=\sqrt{(ij|ij)^2}\f$.
+ */
+class SchwarzMetric: public pulsar::MatrixBuilder {
+public:
+    SchwarzMetric(ID_t id):MatrixBuilder(id){}
     ReturnType calculate_(const std::string & key,
                           unsigned int deriv,
                           const pulsar::Wavefunction & wfn,

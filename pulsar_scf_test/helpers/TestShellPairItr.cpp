@@ -28,10 +28,11 @@ std::map<std::array<size_t,2>,std::vector<std::array<size_t,2>>> corr_bfs={
 };
 
 TEST_SIMPLE(TestShellPairItr){
-    CppTester tester("Testing the ShellPairItr class");
+    CppTester tester("Testing the ShellPairItr classes");
 
     auto wf=make_wf();
-    ShellPairItr my_itr(wf.system->get_basis_set("PRIMARY"));
+    auto bs=wf.system->get_basis_set("PRIMARY");
+    ShellPairItr my_itr(bs);
     auto corr_shell_itr=corr_shells.begin();
     while(my_itr)
     {
@@ -52,6 +53,6 @@ TEST_SIMPLE(TestShellPairItr){
         }
         ++my_itr;++corr_shell_itr;
     }
-
+    tester.print_results();
     return tester.nfailed();
 }

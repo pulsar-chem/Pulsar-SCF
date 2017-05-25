@@ -3,6 +3,9 @@ project(pulsar-scf-superbuild CXX)
 
 include(ExternalProject)
 
+
+option(ENABLE_GA "Build Global Array bindings?" False)
+
 ############################
 # Build type
 ############################
@@ -28,11 +31,24 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # Ie, the original CMAKE_PREFIX_PATH, plus the installation stage
 list(APPEND CMAKE_PREFIX_PATH ${STAGE_INSTALL_PREFIX})
 
+macro(ADD_EXTRA_ARG extra_arg arg_name)
+    if(${arg_name})
+        set(${extra_arg} ${${extra_arg}}
+                         -D${arg_name}=${${arg_name}})
+    endif()
+endmacro()
+
+ADD_EXTRA_ARG(PULSAR_EXTRA_ARGS PYTHON_EXECUTABLE MPI_CXX_COMPILER)
+
+add_subdirectory(external)
+
+
 ExternalProject_Add(pulsar_scf
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/pulsar_scf
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+               -DENABLE_GA=${ENABLE_GA}
     BUILD_ALWAYS 1
     INSTALL_COMMAND ${CMAKE_MAKE_PROGRAM} install DESTDIR=${STAGE_DIR}
     CMAKE_CACHE_ARGS -DCMAKE_PREFIX_PATH:LIST=${CMAKE_PREFIX_PATH}
@@ -40,6 +56,8 @@ ExternalProject_Add(pulsar_scf
                      -DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}
                      -DCMAKE_MODULE_PATH:LIST=${CMAKE_MODULE_PATH}
 )
+
+add_dependencies(pulsar_scf global_arrays)
 
 ###############################
 # Pulsar SCF tests
@@ -52,6 +70,7 @@ ExternalProject_Add(pulsar_scf_test
                -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
                -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
                -DPULSAR_SCF_ROOT=${CMAKE_CURRENT_SOURCE_DIR}
+               -DENABLE_GA=${ENABLE_GA}
                -DSTAGE_DIR=${STAGE_DIR}
     BUILD_ALWAYS 1
     CMAKE_CACHE_ARGS -DCMAKE_PREFIX_PATH:LIST=${CMAKE_PREFIX_PATH}
@@ -70,3 +89,13 @@ file(WRITE ${CMAKE_BINARY_DIR}/CTestTestfile.cmake "subdirs(test_stage)")
 install(DIRECTORY ${CMAKE_BINARY_DIR}/stage/${CMAKE_INSTALL_PREFIX}/
         DESTINATION ${CMAKE_INSTALL_PREFIX} USE_SOURCE_PERMISSIONS)
 
+#####################
+# uninstall target
+#####################
+configure_file(
+"${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_uninstall.cmake.in"
+"${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
+IMMEDIATE @ONLY)
+
+add_custom_target(uninstall
+  COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)

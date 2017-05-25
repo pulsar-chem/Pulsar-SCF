@@ -10,7 +10,7 @@
 #include "pulsar_scf/builders/T.hpp"
 #include "pulsar_scf/builders/V.hpp"
 #include "pulsar_scf/builders/X.hpp"
-
+#include "pulsar_scf/ga_builders/JK.hpp"
 using pulsar::ModuleCreationFuncs;
 
 extern "C" {
@@ -29,9 +29,10 @@ ModuleCreationFuncs insert_supermodule(void){
     cf.add_cpp_creator<pulsar_scf::DFCoef>("DFCoef");
     cf.add_cpp_creator<pulsar_scf::TElectronic>("TElectronic");
     cf.add_cpp_creator<pulsar_scf::SCF>("SCF");
-    cf.add_cpp_creator<pulsar_scf::SchwarzScreen>("SchwarzScreen");
+    cf.add_cpp_creator<pulsar_scf::SchwarzMetric>("SchwarzScreen");
     cf.add_cpp_creator<pulsar_scf::NuclearElectronic>("NuclearElectronic");
     cf.add_cpp_creator<pulsar_scf::Orthogonalizer>("Orthogonalizer");
+    cf.add_cpp_creator<pulsar_scf::GAJK>("GAJK");
     return cf;
 }
 

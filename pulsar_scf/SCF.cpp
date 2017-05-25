@@ -37,7 +37,6 @@ DerivReturnType SCF::deriv_(size_t deriv,
 
     const double ENuc=nuclear_nuclear_repulsion(wfn);
     double oldE=ENuc;
-    std::cout<<"Nuclear-Nuclear repulsion is: "<<ENuc<<std::endl;
     std::unique_ptr<DIIS<matrix_type>> diis;
     const auto H=*convert_to_eigen(*create_child_from_option<MatrixBuilder>("H_KEY")
                                    ->calculate("",deriv,wfn,bs,bs)[0]);

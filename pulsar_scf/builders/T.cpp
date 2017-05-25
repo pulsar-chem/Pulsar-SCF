@@ -19,7 +19,6 @@ MatrixBuilder::HashType TElectronic::my_hash_(const string &,
 {
     auto T_key=options().get<string>(T_opt);
     auto TInts=create_child_from_option<TwoCenterIntegral>(T_opt);
-    //The result of this module is entirely determined by the TwoCenterIntegral
     return T_key+TInts->my_hash(deriv,wfn,bs1,bs2);
 }
 

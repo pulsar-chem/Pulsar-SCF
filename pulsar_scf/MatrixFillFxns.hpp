@@ -2,7 +2,7 @@
 #include<pulsar/math/TensorImpl.hpp>
 #include<vector>
 #include<memory>
-
+#include "pulsar_scf/helpers/ShellPairItr.hpp"
 namespace pulsar_scf {
 namespace detail_ {
 
@@ -11,28 +11,16 @@ matrix_type fill_symmetric(const int_ptr& Ints,
                            const pulsar::BasisSet& bs)
 {
     matrix_type result(bs.n_functions(),bs.n_functions());
-    const size_t nshells1=bs.n_shell(),nshells2=bs.n_shell();
-    for(size_t shell_i=0; shell_i<nshells1;++shell_i)
+    ShellPairItr shell_pair(bs);
+
+    while(shell_pair)
     {
-        const size_t nbf_i=bs.shell(shell_i).n_functions();
-        const size_t ni_off=bs.shell_start(shell_i);
-        for(size_t shell_j=shell_i; shell_j<nshells2;++shell_j)
-        {
-            const size_t nbf_j=bs.shell(shell_j).n_functions();
-            const size_t nj_off=bs.shell_start(shell_j);
-            //Buffer is nbfi by nbfj
-            const double* buffer=Ints->calculate(shell_i,shell_j);
-            for(size_t mu=0;mu<nbf_i;++mu)
-            {
-                const size_t row_big=mu+ni_off;
-                const size_t row_small=mu*nbf_j;
-                for(size_t nu=0;nu<nbf_j;++nu)
-                {
-                    result(row_big,nu+nj_off)=buffer[row_small+nu];
-                    result(nu+nj_off,row_big)=buffer[row_small+nu];
-                }
-            }
-        }
+        const auto& shell=*shell_pair;
+        const double* buffer=Ints->calculate(shell[0],shell[1]);
+        size_t counter=0;
+        for(const auto& idx:shell_pair)
+            result(idx[0],idx[1])=result(idx[1],idx[0])=buffer[counter++];
+        ++shell_pair;
     }
     return result;
 }

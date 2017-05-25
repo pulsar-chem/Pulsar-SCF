@@ -1,5 +1,9 @@
-#from .pulsar_scf import *
 from .modinfo import *
+try: #See if we need to initialize stuff
+    from .pulsar_scf import *
+    GA_initialize()
+except:
+    pass
 
 def initialize(mm):
     mm.load_module("pulsar_scf","DFInts","PSR_3C2E")
@@ -17,3 +21,4 @@ def initialize(mm):
     mm.load_module("pulsar_scf","DFCoef","PSR_DFCoef")
     mm.load_module("pulsar_scf","SCF","PSR_SCF")
     mm.load_module("pulsar_scf","SchwarzScreen","PSR_Sieve")
+    mm.load_module("pulsar_scf","GAJK","PSR_GA_JK")

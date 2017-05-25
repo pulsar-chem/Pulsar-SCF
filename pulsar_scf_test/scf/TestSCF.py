@@ -13,6 +13,7 @@ def run(mm):
     mm.change_option("PSR_T","T_INTS_KEY","LIBINT_T")
     mm.change_option("PSR_S","S_INTS_KEY","LIBINT_S")
     mm.change_option("PSR_JK","ERI_KEY","LIBINT_ERI")
+    mm.change_option("PSR_Sieve","ERI_INTS_KEY","LIBINT_ERI")
     wf=make_wf()
     wf.system=psr.apply_single_basis("PRIMARY","aug-cc-pvdz",wf.system)
     bs=wf.system.get_basis_set("PRIMARY")

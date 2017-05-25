@@ -19,7 +19,6 @@ MatrixBuilder::HashType Overlap::my_hash_(const string &,
 {
     auto s_key=options().get<string>(s_opt);
     auto SInts=create_child_from_option<TwoCenterIntegral>(s_opt);
-    //The result of this module is entirely determined by the TwoCenterIntegral
     return s_key+SInts->my_hash(deriv,wfn,bs1,bs2);
 }
 

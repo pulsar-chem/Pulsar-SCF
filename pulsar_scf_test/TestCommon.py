@@ -6,7 +6,7 @@ def make_wf():
     Oy=-0.07579*angstrom_to_bohr
     Hx=0.86681*angstrom_to_bohr
     Hy=0.60144*angstrom_to_bohr
-    cg = psr.ShellType.CartesianGaussian
+    cg = psr.ShellType.SphericalGaussian
     O1s = psr.BasisShellInfo(cg,0,3,1,
                          [130.709320000, 23.808861000, 6.443608300],
                          [0.15432897, 0.53532814, 0.44463454])

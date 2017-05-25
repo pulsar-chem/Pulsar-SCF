@@ -11,10 +11,11 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
 endif()
 
 find_package(pulsar CONFIG REQUIRED)
+
 set(PULSAR_SCF ${STAGE_DIR}/${PULSAR_MODULE_DIR})
 set(PULSAR_SCF_LIBRARY ${PULSAR_SCF}/pulsar_scf.so)
 include_directories(${PULSAR_SCF_ROOT})
-foreach(dir builders helpers scf)
+foreach(dir builders ga_builders helpers scf)
   add_subdirectory(${dir})
   install(FILES ${CMAKE_BINARY_DIR}/${dir}/CTestTestfile.cmake DESTINATION ${dir})
 endforeach()

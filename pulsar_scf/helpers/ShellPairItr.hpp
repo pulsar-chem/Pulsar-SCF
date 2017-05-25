@@ -3,155 +3,205 @@
 #include<array>
 
 namespace pulsar_scf {
-class ShellPairItr;
-
-
-/** \brief Class that iterates over the pairs of the shell functions
- *
- *  A BasisFunctionPairItr instance can only be made by a ShellPairItr instance.
- *  When made it will iterate over the the actual basis functions of the shell
- *  pair. E.G., assume our ShellPairItr is on shell pair 1 3, and assume shell
- *  1's basis functions start at index 3 and shell 3's start at index 8 then
- *  this class will return:
- *  ~~~
- *  3,8
- *  3,9
- *  ...
- *  3,m
- *  4,8
- *  4,9
- *  ...
- *  4,m
- *  5,8
- *  ...
- *  n,m
- *  ~~~
- *  where n is the length of shell 1 and m is the length of shell 3.
- *
- */
-class BasisFunctionPairItr{
-private:
-     friend class ShellPairItr;
-     using array_t=std::array<size_t,2>;
-     array_t idx_;///<The current pair of shells
-     const array_t nbf_;///<Last BF number of the shells plus 1
-     const array_t& off_;///<BF number starting the shells
-
-     ///Sets idx_ to the next pair of basis functions
-     const BasisFunctionPairItr& next()
-     {
-         if(++idx_[1]==nbf_[1])
-             idx_=array_t({++idx_[0],off_[1]});
-         return *this;
-     }
-
-     ///Makes an iterator to the beginning of the block
-     BasisFunctionPairItr(const array_t& off, const array_t& nbf):
-        idx_({off[0],off[1]}),
-        nbf_({nbf[0]+off[0],nbf[1]+off[1]}),
-        off_(off)
-     {}
-
-     ///Makes an iterator just past the last shell pair
-     BasisFunctionPairItr(const array_t& off, const array_t& nbf,bool):
-         idx_({nbf[0]+off[0],off[1]}),
-         nbf_({nbf[0]+off[0],nbf[1]+off[1]}),
-         off_(off)
-     {}
-
- public:
-     ///Returns the current index
-     const array_t& operator*()const{return idx_;}
-
-     ///Default copy constructor, shallow copies off_
-     BasisFunctionPairItr(const BasisFunctionPairItr&)=default;
-     ///Default move constructor
-     BasisFunctionPairItr(BasisFunctionPairItr&&)=default;
-     ///Because of reference no default constructor
-     BasisFunctionPairItr()=delete;
-     ///Default destructor is fine
-     ~BasisFunctionPairItr()=default;
-
-     ///Returns true if this iterator equals other
-     bool operator==(const BasisFunctionPairItr& other)const{
-         return idx_==other.idx_ &&
-                nbf_==other.nbf_ &&
-                &off_==&other.off_;//Use fact that off is a reference
-     }
-
-     ///Negates operator==
-     bool operator!=(const BasisFunctionPairItr& other)const{
-         return !(*this==other);
-     }
-
-     ///Prefix increment only (no postfix increment owing to inefficiency)
-     const BasisFunctionPairItr& operator++(){return next();}
-
- };
-
-/** \brief Iterates over all unique pairs of shells
- *
- *   A ShellPairItr is only good so long as the BasisSet it is associated with
- *   is in scope.
- *
- */
 class ShellPairItr{
-protected:
     using array_t=std::array<size_t,2>;
-    const pulsar::BasisSet bs_;
-    array_t idx_;
-    array_t nbf_;
-    array_t off_;
-    size_t max_;
+    ///The starting index for each shell (last element is the number of basis functions)
+    const std::vector<size_t> off_;
+    ///The total number of shells
+    const size_t nshells_;
+    ///List of all shell pairs
+    const std::vector<array_t> shell_pairs_;
+    ///The index of the current pair
+    size_t current_pair_;
 
-    const ShellPairItr& next(){
-        const bool is_good(idx_[1]<idx_[0]);
-        if(is_good)++idx_[1];
-        else idx_=array_t({++idx_[0],0});
-        if(done())return *this;
-        const size_t newj=idx_[1];
-        nbf_[1]=bs_.shell(newj).n_functions();
-        off_[1]=bs_.shell_start(newj);
-        if(!is_good)
+
+
+    ///An iterator over the basis functions
+    class BasisFunctionPairItr{
+    private:
+        friend class ShellPairItr;
+        ///Parent ShellPairItr instance
+        const ShellPairItr& parent_;
+        ///Current shell i
+        const size_t i_;
+        ///Current shell j
+        const size_t j_;
+        ///Current basis function pair
+        array_t basis_pair_idx_;
+        const BasisFunctionPairItr& next()
         {
-           const size_t newi=idx_[0];
-           nbf_[0]=bs_.shell(newi).n_functions();
-           off_[0]=bs_.shell_start(newi);
+            if(++basis_pair_idx_[1]<parent_.off_[j_+1])
+                return *this;
+            ++basis_pair_idx_[0];
+            basis_pair_idx_[1]=parent_.off_[j_];
+            return *this;
         }
+
+        ///Constructs a new BasisFunctionPairItr, only callable by ShellPairItr
+        BasisFunctionPairItr(const ShellPairItr& parent,bool end):
+            parent_(parent),
+            i_(parent_.shell_pairs_[parent_.current_pair_][0]),
+            j_(parent_.shell_pairs_[parent_.current_pair_][1]),
+            basis_pair_idx_(array_t({parent_.off_[i_+end],parent_.off_[j_]})){}
+    public:
+        void reset(){
+            const auto& offs=parent_.off_;
+            basis_pair_idx_[0]=offs[i_];
+            basis_pair_idx_[1]=offs[j_];
+        }
+
+        ///Returns the size of the block
+        size_t size()const{
+            return (parent_.off_[i_+1]-parent_.off_[i_])*
+                   (parent_.off_[j_+1]-parent_.off_[j_]);
+        }
+        ///Returns the current basis function pair (indices refer to full basis)
+        const array_t& operator*()const{
+            return basis_pair_idx_;
+        }
+
+        ///Increments the iterator
+        const BasisFunctionPairItr& operator++(){return next();}
+
+        //@{
+        /** Comparison operators.  No check to ensure basis sets are the same. */
+        bool operator==(const BasisFunctionPairItr& other)const{
+            return basis_pair_idx_==other.basis_pair_idx_;
+        }
+        bool operator!=(const BasisFunctionPairItr& other)const
+        {
+            return basis_pair_idx_!=other.basis_pair_idx_;
+        }
+        bool operator<(const BasisFunctionPairItr& other)const
+        {
+            const bool use_2(basis_pair_idx_[0]==other.basis_pair_idx_[0]);
+            return basis_pair_idx_[use_2]<other.basis_pair_idx_[use_2];
+        }
+        bool operator<=(const BasisFunctionPairItr& other)const
+        {
+            return *this==other || *this<other;
+        }
+        bool operator >(const BasisFunctionPairItr& other)const
+        {
+            return !(*this<=other);
+        }
+        bool operator>=(const BasisFunctionPairItr& other)const
+        {
+            return !(*this<other);
+        }
+        //@}
+    };
+
+    const ShellPairItr& next()
+    {
+        ++current_pair_;
         return *this;
    }
 
 public:
+
+    ///Makes an iterator over all the shell pairs in a particular basis set
     ShellPairItr(const pulsar::BasisSet& bs):
-        bs_(bs),
-        idx_({0,0}),
-        nbf_({bs.shell(0).n_functions(),bs.shell(0).n_functions()}),
-        off_({0,0}),
-        max_(bs.n_shell())
-    {}
-
+        off_([&](){
+            std::vector<size_t> rv;
+            size_t nfuncs=0;
+            for(const auto& shell : bs)
+                for(size_t i=0;i<shell.n_general_contractions();++i)
+                {
+                    rv.push_back(nfuncs);
+                    nfuncs+=shell.general_n_functions(i);
+                }
+            rv.push_back(nfuncs);
+            return rv;
+        }()),
+        nshells_(off_.size()-1),
+        shell_pairs_([=](){
+            //Number of shell pairs is N choose 2 with repeats
+            std::vector<array_t> rv(nshells_*(nshells_+1)/2);
+            for(size_t i=0,counter=0;i<nshells_;++i)
+                for(size_t j=0;j<=i;++j,++counter)
+                    rv[counter]=array_t({i,j});
+            return rv;
+        }()),
+        current_pair_(0)
+    {
+    }
+    ///Default destructor
     ~ShellPairItr()=default;
+    ///No default construction 'cause of const members
     ShellPairItr()=delete;
+    ///Default copy is fine
     ShellPairItr(const ShellPairItr&)=default;
-    ShellPairItr(ShellPairItr&&)=default;
+    ///Can't copy 'cause of const members
+    ShellPairItr& operator=(const ShellPairItr&)=delete;
+    ///Can't move 'cause of const members
+    ShellPairItr(ShellPairItr&&)=delete;
 
-    bool done()const{return idx_[0]==max_;}
+    ///Returns the number of shell pairs this iterator iterates over
+    size_t size()const{return shell_pairs_.size();}
+
+    ///Returns the number of shells
+    size_t nshells()const{return nshells_;}
+
+    ///Makes the iterator start over (very cheap, no reallocations or computation)
+    void reset(){current_pair_=0;}
+
+    ///True if we are done iterating
+    bool done()const{return current_pair_==shell_pairs_.size();}
+
+    ///True if this iterator is still good
     operator bool() const{return !done();}
-    const array_t& operator*()const{return idx_;}
 
+    ///The shell pair being pointed to
+    const array_t& operator*()const{return shell_pairs_[current_pair_];}
+
+    ///Allows random access
+    const array_t& operator[](size_t i)const{return shell_pairs_[i];}
+
+    ///Type of an iterator over the basis functions in this shell pair
+    using const_iterator=BasisFunctionPairItr;
 
     ///Returns an iterator to beginning of this shell pair
     BasisFunctionPairItr begin()const{
-        return !done()?BasisFunctionPairItr(off_,nbf_):end();
+        return BasisFunctionPairItr(*this,false);
     }
 
     ///Returns an iterator just past the end of this shell pair
     BasisFunctionPairItr end()const{
-        return BasisFunctionPairItr(off_,nbf_,true);
+        return BasisFunctionPairItr(*this,true);
     }
 
+    ///Increments the iterator
     const ShellPairItr& operator++(){return next();}
 
+    //@{
+    /** Comparison operators.  All comparisons are lexographic and ignore check
+     *  for same basis set
+     */
+    bool operator==(const ShellPairItr& other)const{
+        return current_pair_==other.current_pair_;
+    }
+    bool operator<(const ShellPairItr& other)const
+    {
+        return current_pair_<other.current_pair_;
+    }
+    bool operator!=(const ShellPairItr& other)const
+    {
+        return !((*this)==other);
+    }
+    bool operator<=(const ShellPairItr& other)const
+    {
+        return *this==other || *this<other;
+    }
+    bool operator >(const ShellPairItr& other)const
+    {
+        return !(*this<=other);
+    }
+    bool operator>=(const ShellPairItr& other)const
+    {
+        return !(*this<other);
+    }
+    //@}
 };
 
-}
+}//End namespace pulsar_scf

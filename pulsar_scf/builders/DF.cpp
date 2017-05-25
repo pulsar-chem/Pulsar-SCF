@@ -91,9 +91,9 @@ Rank3Builder::ReturnType DFInts::calculate_(const string &,
             }
         }
     }
-
     return {make_shared<EigenTensorImpl<3>>(move(ints))};
 }
+
 
 Rank3Builder::HashType DFCoef::my_hash_(const string & key,
                                         unsigned int deriv,
@@ -120,7 +120,6 @@ Rank3Builder::ReturnType DFCoef::calculate_(const std::string&,
 {
     if(options().get<bool>("FORCE_CACHE"))
         throw PulsarException("Cache value not found and FORCE_CACHE=True");
-
     const size_t ndf=dfbs.n_functions();
     const auto metric_ints=
             create_child_from_option<MatrixBuilder>(metric_opt);

@@ -21,7 +21,6 @@ MatrixBuilder::HashType NuclearElectronic::my_hash_(const string &,
 {
     auto V_key=options().get<string>(V_opt);
     auto VInts=create_child_from_option<TwoCenterIntegral>(V_opt);
-    //The result of this module is entirely determined by the TwoCenterIntegral
     return V_key+VInts->my_hash(deriv,wfn,bs1,bs2);
 }
 

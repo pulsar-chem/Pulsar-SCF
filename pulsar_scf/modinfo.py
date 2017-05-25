@@ -6,7 +6,9 @@ version="0.1a"
 no_options={}
 no_ref,Ryan=[""],["Ryan Richard"]
 mods=["TElectronic","NuclearElectronic","HCore","Overlap","JK",
-      "DFJK","G","F","SchwarzScreen","Orthogonalizer","Metric"]
+      "DFJK","G","F","SchwarzScreen","Orthogonalizer","Metric",
+      "GAJK"
+      ]
 force_cache=(OptionType.Bool,False,False,None,
     "Should this module fail if the cache is not used?")
 minfo={}
@@ -55,6 +57,11 @@ minfo["DFJK"]["options"]={
         "The key for the fitting basis set"),
     "FITTING_COEF_KEY":(OptionType.String,"PSR_DFCoef",False,None,
         "The key for module that builds the density fitting coeficients"),
+    "FORCE_CACHE":force_cache
+}
+minfo["GAJK"]["description"]="Builds the J and K matrices in a direct manner using Global Arrays"
+minfo["GAJK"]["options"]={
+    "ERI_KEY":(OptionType.String,None,True,None,"The key for the ERI"),
     "FORCE_CACHE":force_cache
 }
 minfo["G"]["description"]="Builds G"

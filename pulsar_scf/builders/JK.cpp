@@ -5,6 +5,8 @@
 #include <pulsar/modulebase/Rank3Builder.hpp>
 #include <memory>
 #include <pulsar/math/EigenImpl.hpp>
+#include "pulsar_scf/helpers/ShellQuartetItr.hpp"
+#include "pulsar_scf/helpers/SchwarzScreen.hpp"
 
 using namespace pulsar;
 using namespace std;
@@ -12,6 +14,7 @@ using matrix_type=EigenMatrixImpl::matrix_type;
 using tensor_type=EigenTensorImpl<3>::tensor_type;
 using tensor_matrix=Eigen::TensorMap<Eigen::Tensor<const double,2>>;
 using ReturnType=MatrixBuilder::ReturnType;
+
 namespace pulsar_scf {
 
 const string ERI_opt="ERI_KEY";
@@ -39,83 +42,45 @@ ReturnType JK::calculate_(const string &,
 {
     if(options().get<bool>("FORCE_CACHE"))
         throw PulsarException("Value not in cache, but FORCE_CACHE=true");
-    using ci=const size_t;
-    const auto& D=*convert_to_eigen(*wfn.opdm->get(Irrep::A,Spin::alpha));
+    auto sharedD=convert_to_eigen(*wfn.opdm->get(Irrep::A,Spin::alpha));
+    const auto& D=*sharedD;
     const auto Ints=create_child_from_option<FourCenterIntegral>(ERI_opt);
     Ints->initialize(deriv,wfn,bs1,bs2,bs1,bs2);
-    ci nshells1=bs1.n_shell(), nbf=bs1.n_functions();
-
-    matrix_type J=matrix_type::Zero(nbf,nbf),
-                K=matrix_type::Zero(nbf,nbf);
-
-    for(size_t shell_i=0; shell_i<nshells1;++shell_i)
+    const size_t nbf=bs1.n_functions();
+    matrix_type J=matrix_type::Zero(nbf,nbf),K=matrix_type::Zero(nbf,nbf);
+    auto schwarz_metric=create_child<MatrixBuilder>("PSR_Sieve");
+    const auto& metric=
+         *convert_to_eigen(*schwarz_metric->calculate("",deriv,wfn,bs1,bs2)[0]);
+    SchwarzScreen sieve(metric,D,bs1);
+    ShellQuartetItr quarts(bs1);
+    while(quarts)
     {
-        ci nbf_i=bs1.shell(shell_i).n_functions();
-        ci off_i=bs1.shell_start(shell_i);
-
-        for(size_t shell_j=0; shell_j<=shell_i; ++shell_j)
+        const auto& shell=*quarts;
+        if(!sieve.is_good(shell))
         {
-            ci nbf_j=bs1.shell(shell_j).n_functions();
-            ci off_j=bs1.shell_start(shell_j);
-
-            const bool ieqj(shell_i==shell_j);
-            const double ij_deg(ieqj ? 1.0 : 2.0);
-
-            for(size_t shell_k=0; shell_k<=shell_i;++shell_k)
-            {
-                ci nbf_k=bs1.shell(shell_k).n_functions();
-                ci off_k=bs1.shell_start(shell_k);
-
-                const bool ieqk(shell_i==shell_k);
-                ci max_l( ieqk ? shell_j : shell_k);
-
-
-                for(size_t shell_l=0; shell_l<=max_l;++shell_l)
-                {
-                    ci nbf_l=bs1.shell(shell_l).n_functions();
-                    ci off_l=bs1.shell_start(shell_l);
-
-                    const bool keql(shell_k==shell_l);
-                    const bool jeql(shell_j==shell_l);
-                    const double kl_deg(keql ? 1.0 : 2.0);
-                    const double ij_kl_deg( ieqk && jeql? 1.0 : 2.0);
-                    const double total_deg(ij_deg*kl_deg*ij_kl_deg);
-                    //Buffer is nbfi by nbfj by nbfk by nbfl
-                    const double* buffer=
-                               Ints->calculate(shell_i,shell_j,shell_k,shell_l);
-                    if(buffer == nullptr)continue;
-
-                    for(size_t mu=0, counter=0;mu<nbf_i;++mu)
-                    {
-                        ci mu_large=mu+off_i;
-
-                        for(size_t nu=0;nu<nbf_j;++nu)
-                        {
-                            ci nu_large=nu+off_j;
-
-                            for(size_t lambda=0;lambda<nbf_k;++lambda)
-                            {
-                                ci lambda_large=lambda+off_k;
-
-                                for(size_t sigma=0;sigma<nbf_l;++sigma,++counter)
-                                {
-                                    ci sigma_large=sigma+off_l;
-                                    const double value=buffer[counter]*total_deg;
-
-                                    J(mu_large,nu_large)+=D(lambda_large,sigma_large)*value;
-                                    J(lambda_large,sigma_large)+=D(mu_large,nu_large)*value;
-                                    K(mu_large,lambda_large)-=D(nu_large,sigma_large)*value;
-                                    K(mu_large,sigma_large)-=D(nu_large,lambda_large)*value;
-                                    K(nu_large,sigma_large)-=D(mu_large,lambda_large)*value;
-                                    K(nu_large,lambda_large)-=D(mu_large,sigma_large)*value;
-                                }
-                            }
-                        }
-                    }
-
-                }
-            }
+            ++quarts;
+            continue;
         }
+        const double total_deg=quarts.degeneracy();
+        const double* buffer=
+                   Ints->calculate(shell[0],shell[1],shell[2],shell[3]);
+
+        size_t counter=0;
+        for(const auto& bf_quart:quarts)
+        {
+            const double value=buffer[counter++]*total_deg;
+            const size_t mu=bf_quart[0],
+                         nu=bf_quart[1],
+                         lambda=bf_quart[2],
+                         sigma=bf_quart[3];
+            J(mu,nu)+=D(lambda,sigma)*value;
+            J(lambda,sigma)+=D(mu,nu)*value;
+            K(mu,lambda)-=D(nu,sigma)*value;
+            K(mu,sigma) -=D(nu,lambda)*value;
+            K(nu,sigma) -=D(mu,lambda)*value;
+            K(nu,lambda)-=D(mu,sigma)*value;
+        }
+        ++quarts;
     }
 
     matrix_type J_final=0.5*(J+J.transpose());
