@@ -2,6 +2,7 @@
 #include <pulsar/modulebase/TwoCenterIntegral.hpp>
 #include <pulsar/modulebase/ThreeCenterIntegral.hpp>
 #include "pulsar_scf/HelperFunctions.hpp"
+#include "pulsar_scf/helpers/ShellTripleItr.hpp"
 
 using namespace pulsar;
 using namespace std;
@@ -51,45 +52,32 @@ Rank3Builder::HashType DFInts::my_hash_(const string &,
 }
 
 Rank3Builder::ReturnType DFInts::calculate_(const string &,
-                      unsigned int deriv,
-                      const pulsar::Wavefunction & wfn,
-                      const pulsar::BasisSet & bs1,
-                      const pulsar::BasisSet & bs2,
-                      const pulsar::BasisSet & bs3)
+                                            unsigned int deriv,
+                                            const pulsar::Wavefunction & wfn,
+                                            const pulsar::BasisSet & bs1,
+                                            const pulsar::BasisSet & bs2,
+                                            const pulsar::BasisSet & bs3)
 {
     if(options().get<bool>("FORCE_CACHE"))
         throw PulsarException("Cache does not contain value and FORCE_CACHE=True");
     auto DFInts=
             create_child_from_option<ThreeCenterIntegral>(df_opt);
     DFInts->initialize(deriv,wfn,bs1,bs2,bs3);
-    const size_t nbf1=bs1.n_functions(),
-                 nbf2=bs2.n_functions(),
-                 nbf3=bs3.n_functions();
-    const size_t nshell1=bs1.n_shell(),
-                 nshell2=bs2.n_shell(),
-                 nshell3=bs2.n_shell();
-    Eigen::Tensor<double,3> ints(nbf1,nbf2,nbf3);
-    for(size_t i=0;i<nshell1;++i)
+    ShellTripleItr shell_triple(bs1,bs2);
+    const size_t nbf1=bs1.n_functions(),nbf2=bs2.n_functions();
+    Eigen::Tensor<double,3> ints(nbf1,nbf2,nbf2);
+    if(bs2!=bs3)throw PulsarException("Non-symmetric case not coded");
+    while(shell_triple)
     {
-        const size_t nbfi=bs1.shell(i).n_functions();
-        const size_t offi=bs1.shell_start(i);
-        for(size_t j=0;j<nshell2;++j)
-        {
-            const size_t nbfj=bs2.shell(j).n_functions();
-            const size_t offj=bs2.shell_start(j);
-            for(size_t k=0;k<nshell3;++k)
-            {
-                const size_t nbfk=bs3.shell(k).n_functions();
-                const size_t offk=bs3.shell_start(k);
-                auto buffer=DFInts->calculate(i,j,k);
-                if(buffer==nullptr)continue;
-                for(size_t n1=0,counter=0;n1<nbfi;++n1)
-                    for(size_t n2=0;n2<nbfj;++n2)
-                        for(size_t n3=0;n3<nbfk;++n3,++counter)
-                            ints(n1+offi,n2+offj,n3+offk)=buffer[counter];
-
-            }
-        }
+        const auto& idx=*shell_triple;
+        auto buffer=DFInts->calculate(idx[0],idx[1],idx[2]);
+        if(buffer==nullptr)continue;
+        size_t counter=0;
+        for(const auto& bf_triple:shell_triple)
+            ints(bf_triple[0],bf_triple[1],bf_triple[2])=
+            ints(bf_triple[0],bf_triple[2],bf_triple[1])=
+            buffer[counter++];
+        ++shell_triple;
     }
     return {make_shared<EigenTensorImpl<3>>(move(ints))};
 }
@@ -128,9 +116,9 @@ Rank3Builder::ReturnType DFCoef::calculate_(const std::string&,
     auto Jmetric =
             *convert_to_eigen(*metric_ints->calculate("",deriv,wfn,dfbs,dfbs)[0]);
     matrix_type Linv_temp=
-          Jmetric.llt().matrixL().solve(matrix_type::Identity(ndf,ndf));
+            Jmetric.llt().matrixL().solve(matrix_type::Identity(ndf,ndf));
     tensor_type d_Qls=
-          *convert_to_eigen(*df_ints->calculate("",deriv,wfn,dfbs,bs1,bs2)[0]);
+            *convert_to_eigen(*df_ints->calculate("",deriv,wfn,dfbs,bs1,bs2)[0]);
     tensor_matrix Linv(Linv_temp.data(), ndf,ndf);
     std::array<Eigen::IndexPair<int>,1> idx({Eigen::IndexPair<int>(1,0)});
     auto coefs=Linv.contract(d_Qls,idx);

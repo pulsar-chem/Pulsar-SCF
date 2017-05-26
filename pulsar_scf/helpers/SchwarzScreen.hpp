@@ -2,10 +2,17 @@
 #include<pulsar/modulebase/MatrixBuilder.hpp>
 #include<pulsar/math/TensorImpl.hpp>
 #include<pulsar/math/MinMax.hpp>
+#include "pulsar_scf/PulsarSCF.hpp"
 
 namespace pulsar_scf {
 
-/** \brief
+/**
+*  The results of this builder are a matrix \f$S_{ij}=\sqrt{(ij|ij)^2}\f$.
+*/
+MATRIX_BUILDER(SchwarzMetric)
+
+
+/** \brief This is the actual object to use to screen integrals
  *
  *
  *  This class works based off the Cauchy-Schwarz inequality:
@@ -57,22 +64,5 @@ public:
    }
 };
 
- /**
- *  The results of this builder are a matrix \f$S_{ij}=\sqrt{(ij|ij)^2}\f$.
- */
-class SchwarzMetric: public pulsar::MatrixBuilder {
-public:
-    SchwarzMetric(ID_t id):MatrixBuilder(id){}
-    ReturnType calculate_(const std::string & key,
-                          unsigned int deriv,
-                          const pulsar::Wavefunction & wfn,
-                          const pulsar::BasisSet & bs1,
-                          const pulsar::BasisSet & bs2);
-    HashType my_hash_(const std::string & key,
-                          unsigned int deriv,
-                          const pulsar::Wavefunction & wfn,
-                          const pulsar::BasisSet & bs1,
-                          const pulsar::BasisSet & bs2);
-};
 
 }

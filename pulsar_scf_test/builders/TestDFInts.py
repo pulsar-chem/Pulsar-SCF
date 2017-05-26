@@ -9,7 +9,11 @@ corr_ints=[2.06862800666547 ,0.37836424238981425 ,1.8259793974439417e-17 ,0.0 ,0
 
 def run(mm):
     tester = psr.PyTester("Testing Building of the 2 electron, 3 center integrals")
-    wf=make_wf()
+    wf=psr.make_wf("sto-3g","""
+    O 0.0 -0.07579 0.0
+    H 0.86681 0.60144 0.0
+    H -0.86681 0.60144 0.0
+    """)
     mm.load_supermodule("pulsar_libint")
     mm.load_supermodule("pulsar_scf")
     mm.change_option("PSR_3C2E","DF_INTS_KEY","LIBINT_3C2E")

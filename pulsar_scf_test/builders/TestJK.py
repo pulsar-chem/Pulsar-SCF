@@ -51,11 +51,11 @@ def run(mm):
     mm.change_option("PSR_Metric","METRIC_INTS_KEY","LIBINT_Metric")
     mm.change_option("PSR_3C2E","DF_INTS_KEY","LIBINT_3C2E")
 
-    wf=make_wf()#psr.make_wf("sto-3g","""
-    #O 0.0 -0.07579 0.0
-    #H 0.86681 0.60144 0.0
-    #H -0.86681 0.60144 0.0
-    #""")
+    wf=psr.make_wf("sto-3g","""
+    O 0.0 -0.07579 0.0
+    H 0.86681 0.60144 0.0
+    H -0.86681 0.60144 0.0
+    """)
     bs=wf.system.get_basis_set("PRIMARY")
     guess=mm.get_module("PSR_DCore",0).deriv(0,wf)[0]
     JKmod=mm.get_module("PSR_JK",0)
@@ -74,8 +74,7 @@ def run(mm):
     tester.test_double_vector("Cache K",K.flatten(),corr_K)
 
     #I'm lazy and am going to use the STO-3G for the fitting basis too
-    wfn=make_wf()
-    bs=wf.system.get_basis_set("PRIMARY")
+    guess.system=psr.apply_single_basis("FITTING","sto-3g",guess.system)
 
     JKmod=mm.get_module("PSR_DFJK",0)
     JK=JKmod.calculate("",0,guess,bs,bs)

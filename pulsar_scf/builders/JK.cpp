@@ -47,7 +47,8 @@ ReturnType JK::calculate_(const string &,
     const auto Ints=create_child_from_option<FourCenterIntegral>(ERI_opt);
     Ints->initialize(deriv,wfn,bs1,bs2,bs1,bs2);
     const size_t nbf=bs1.n_functions();
-    matrix_type J=matrix_type::Zero(nbf,nbf),K=matrix_type::Zero(nbf,nbf);
+    matrix_type J=matrix_type::Zero(nbf,nbf),
+                K=matrix_type::Zero(nbf,nbf);
     auto schwarz_metric=create_child<MatrixBuilder>("PSR_Sieve");
     const auto& metric=
          *convert_to_eigen(*schwarz_metric->calculate("",deriv,wfn,bs1,bs2)[0]);

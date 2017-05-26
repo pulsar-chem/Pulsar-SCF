@@ -14,7 +14,11 @@ def run(mm):
     mm.change_option("PSR_S","S_INTS_KEY","LIBINT_S")
     mm.change_option("PSR_JK","ERI_KEY","LIBINT_ERI")
     mm.change_option("PSR_Sieve","ERI_INTS_KEY","LIBINT_ERI")
-    wf=make_wf()
+    wf=psr.make_wf("sto-3g","""
+    O 0.0 -0.07579 0.0
+    H 0.86681 0.60144 0.0
+    H -0.86681 0.60144 0.0
+    """)
     wf.system=psr.apply_single_basis("PRIMARY","aug-cc-pvdz",wf.system)
     bs=wf.system.get_basis_set("PRIMARY")
     guess=mm.get_module("PSR_DCore",0).deriv(0,wf)[0]

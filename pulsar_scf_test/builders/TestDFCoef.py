@@ -8,7 +8,11 @@ corr_ints=[2.0222080644043485 ,0.36987376163212604 ,1.7850044817383496e-17 ,0.0 
 
 def run(mm):
     tester = psr.PyTester("Testing Building of the DF coefficients")
-    wf=make_wf()
+    wf=psr.make_wf("sto-3g","""
+    O 0.0 -0.07579 0.0
+    H 0.86681 0.60144 0.0
+    H -0.86681 0.60144 0.0
+    """)
     mm.load_supermodule("pulsar_libint")
     mm.load_supermodule("pulsar_scf")
     mm.change_option("PSR_3C2E","DF_INTS_KEY","LIBINT_3C2E")

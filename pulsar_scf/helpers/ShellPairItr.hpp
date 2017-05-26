@@ -140,9 +140,6 @@ public:
     ///Returns the number of shell pairs this iterator iterates over
     size_t size()const{return shell_pairs_.size();}
 
-    ///Returns the number of shells
-    size_t nshells()const{return nshells_;}
-
     ///Makes the iterator start over (very cheap, no reallocations or computation)
     void reset(){current_pair_=0;}
 

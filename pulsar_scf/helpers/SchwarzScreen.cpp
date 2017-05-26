@@ -36,7 +36,7 @@ ReturnType SchwarzMetric::calculate_(const std::string &,
     if(!is_symmetric)
         throw PulsarException("Non-symmetric case is not coded yet");
     ShellPairItr shell_pair(bs1);
-    matrix_type S(shell_pair.nshells(),shell_pair.nshells());
+    matrix_type S(bs1.n_shell(false),bs1.n_shell(false));
     while(shell_pair)
     {
        const auto& idx=*shell_pair;
@@ -44,10 +44,9 @@ ReturnType SchwarzMetric::calculate_(const std::string &,
        const double* eri=ERIInts->calculate(i,j,i,j);
        const size_t nbf2=shell_pair.begin().size();
        Eigen::Map<const matrix_type> buffer(eri, nbf2, nbf2);
-            const double value = std::sqrt(buffer.norm());
-            S(i,j)=value;
-            if(is_symmetric)S(j,i)=value;
-        ++shell_pair;
+       const double value = std::sqrt(buffer.norm());
+       S(i,j)=S(j,i)=value;
+       ++shell_pair;
     }
     return {make_shared<EigenMatrixImpl>(move(S))};
 
@@ -58,19 +57,20 @@ SchwarzScreen::SchwarzScreen(const Eigen::MatrixXd& metric,
                              const BasisSet& bs,
                              double threshold):
     metric_(metric),
-    density_(bs.n_shell(),bs.n_shell()),
+    density_(Eigen::MatrixXd::Zero(bs.n_shell(false),bs.n_shell(false))),
     threshold_(threshold)
 {
     ShellPairItr shell_pairs(bs);
     while(shell_pairs)
     {
         const auto& pair=*shell_pairs;
-        const size_t i_start=bs.shell_start(pair[0]),
-                     j_start=bs.shell_start(pair[1]);
-        const size_t i_end=bs.shell(pair[0]).n_functions(),
-                     j_end=bs.shell(pair[0]).n_functions();
+        for(const auto& bf_pair : shell_pairs)
+        {
+            const double Dmn=density(bf_pair[0],bf_pair[1]);
+            density_(pair[0],pair[1])+=Dmn*Dmn;
+        }
         density_(pair[0],pair[1])=density_(pair[1],pair[0])=
-                std::sqrt(density.block(i_start,j_start,i_end,j_end).norm());
+                std::sqrt(density_(pair[0],pair[1]));
         ++shell_pairs;
     }
 }

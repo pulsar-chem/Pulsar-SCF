@@ -16,10 +16,11 @@ def run(mm):
     mm.change_option("PSR_Metric","METRIC_INTS_KEY","LIBINT_Metric")
     mm.change_option("PSR_3C2E","DF_INTS_KEY","LIBINT_3C2E")
     mm.change_option("PSR_G","JK_KEY","PSR_DFJK")
-    wf=make_wf()
-    wf.system=psr.apply_single_basis("PRIMARY","aug-cc-pvdz",wf.system)
-    wf.system=psr.apply_single_basis("FITTING","aug-cc-pvdz-jkfit",wf.system)
-    bs=wf.system.get_basis_set("PRIMARY")
+    wf=psr.make_wf("aug-cc-pvdz","""
+    O 0.0 -0.07579 0.0
+    H 0.86681 0.60144 0.0
+    H -0.86681 0.60144 0.0
+    """)
     guess=mm.get_module("PSR_DCore",0).deriv(0,wf)[0]
     #TODO test wf
     egy=mm.get_module("PSR_SCF",0).deriv(0,guess)[1][0]
