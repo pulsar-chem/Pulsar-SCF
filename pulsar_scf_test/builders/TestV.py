@@ -2,7 +2,6 @@ import pulsar as psr
 import numpy as np
 import os,sys
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pulsar_scf_test.TestCommon import make_wf
 corr_T=[-61.5805952694 ,-7.41082185633 ,-0.0144738837457 ,0.0 ,0.0 ,-1.23168557214 ,-1.23168557214 ,
 -7.41082185633 ,-10.0090711421 ,-0.176890834734 ,0.0 ,0.0 ,-2.97722685358 ,-2.97722685358 ,
 -0.0144738837457 ,-0.176890834734 ,-9.9440433417 ,0.0 ,0.0 ,-1.47179333871 ,-1.47179333871 ,

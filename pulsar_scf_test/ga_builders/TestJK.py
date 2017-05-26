@@ -2,7 +2,6 @@ import pulsar as psr
 import numpy as np
 import os,sys
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pulsar_scf_test.TestCommon import make_wf
 corr_J=[18.6895,      3.56671,  1.73472e-17,   0.00363693,  3.85186e-33,     0.581617,     0.581617,
         3.56671,      8.84604,   1.4138e-16,  -0.00195023,   1.2326e-32,      2.70861,      2.70861,
     1.73472e-17,   1.4138e-16,      8.83615,  1.73472e-17, -2.92922e-17,      1.68061,     -1.68061,
@@ -52,7 +51,11 @@ def run(mm):
     mm.change_option("PSR_Metric","METRIC_INTS_KEY","LIBINT_Metric")
     mm.change_option("PSR_3C2E","DF_INTS_KEY","LIBINT_3C2E")
 
-    wf=make_wf()
+    wf=psr.make_wf("sto-3g","""
+    O 0.0 -0.07579 0.0
+    H 0.86681 0.60144 0.0
+    H -0.86681 0.60144 0.0
+    """)
     bs=wf.system.get_basis_set("PRIMARY")
     print("Calling DCore")
     guess=mm.get_module("PSR_DCore",0).deriv(0,wf)[0]

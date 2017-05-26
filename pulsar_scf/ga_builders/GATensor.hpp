@@ -79,11 +79,8 @@ public:
         set_value(idx.data(),idx.data(),&value);
     }
 
-    ///Sets a block from a buffer, uses normal C++ [lo,hi) range (copies buffer)
+    ///Sets a block from a buffer, uses normal C++ [lo,hi) range
     void set_value(const shape_t& shape,const double* buffer);
-
-    ///Sets a block from a buffer, takes ownership
-    void set_value(const shape_t& shape,double* buffer);
 
     ///Sets all elements of the tensor to a value
     void fill(double value)const;

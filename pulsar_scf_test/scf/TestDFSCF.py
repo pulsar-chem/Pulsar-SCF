@@ -3,7 +3,6 @@ import numpy as np
 import os,sys
 import functools
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pulsar_scf_test.TestCommon import make_wf
 
 def run(mm):
     tester = psr.PyTester("Testing pulsar SCF")
