@@ -5,6 +5,7 @@
 #include<pulsar/math/TensorImpl.hpp>
 #include<pulsar/math/EigenImpl.hpp>
 #include<pulsar/math/Cast.hpp>
+#include<bphash/types/All.hpp>
 
 namespace pulsar_scf {
 
@@ -18,10 +19,8 @@ namespace pulsar_scf {
  *
  *  A couple of things to note:
  *
- *  GA's C API is not very explicit about who owns memory and when.  I've
- *  modeled this class somewhat after the std::vector.  The short and sweet
- *  explanation of this statement is this class owns the memory associated with
- *  it.
+ *  You can get the handle to the tensor so you can call GA yourself.  This is
+ *  strongly discouraged.
  *
  *  As far as I can tell blocks in GA are always contiguous as far as indices go
  *  that is to say that the elements in the flattened buffer are something like
@@ -35,7 +34,12 @@ namespace pulsar_scf {
  *  range standard, i.e. [begin,end], happens under the hood.
  *
  *  At the moment the shape of an instance can't be reshaped.  If you want to
- *  change its shape you'll have to make a new instance.  This means the
+ *  change its shape you'll have to make a new instance.
+ *
+ *  This class uses RAII, what this means is when you make an instance it
+ *  obtains the memory it will need.  When the instance goes out of scope it
+ *  releases the memory.  In other words, you're not responsible for the memory
+ *  managed by this class.
  *
  */
 class GATensor{
@@ -47,35 +51,63 @@ public:
     using shape_t = std::vector<limit_t>;
 
     ///The type of the buffer
-    using buffer_t = std::shared_ptr<std::vector<double>>;
+    using buffer_t = std::vector<double>;
+
+    ///The type of an N-dimensional index
+    template<size_t N>
+    using index_t=std::array<size_t,N>;
 
     ///Makes a GATensor from an existing handle
-    ///(call set_value to give this class the memory)
     GATensor(int handle):handle_(handle){}
 
     ///Makes a GATensor with dimensions given by \p dims and blocked via \p chunks
     template<size_t N>
-    GATensor(const std::array<size_t,N>& dims,const std::array<size_t,N>& chunks,
-             const char * name=""):
+    GATensor(const index_t<N>& dims,const index_t<N>& chunks,
+             const char * name=nullptr):
         GATensor(N,dims.data(),chunks.size()?chunks.data():nullptr,name)
     {}
 
     ///Makes a GATensor with dimensions \p dims, blocks determined automatically
     template<size_t N>
-    explicit GATensor(const std::array<size_t,N>& dims,const char * name=""):
-        GATensor(dims,std::array<size_t,N>(),name){}
+    explicit GATensor(const index_t<N>& dims,const char * name=nullptr):
+        GATensor(dims,index_t<N>(),name){}
 
     ///Makes a GATensor with dimension \p dims, set to value
     template<size_t N>
-    GATensor(const std::array<size_t,N>& dims,double value,const char* name=""):
+    GATensor(const index_t<N>& dims,double value,const char* name=nullptr):
         GATensor(dims,name)
     {
         fill(value);
     }
 
+    ///Deep copies a GATensor
+    GATensor(const GATensor& other);
+
+    ///Deep copies a GATensor
+    const GATensor& operator=(GATensor other){
+        swap(other);
+        return *this;
+    }
+
+    ///Swaps the contents of this GATensor with other
+    void swap(GATensor& other);
+
+    ///Takes ownership of other
+    GATensor(GATensor&& other){swap(other);}
+
+    ///Takes ownership of other
+    const GATensor& operator=(GATensor&& other)
+    {
+        swap(other);
+        return *this;
+    }
+
+    ///Deallocates the tensor
+    ~GATensor();
+
     ///Sets a single value
     template<size_t N>
-    void set_value(const std::array<size_t,N>& idx, double value)const{
+    void set_value(const index_t<N>& idx, double value)const{
         set_value(idx.data(),idx.data(),&value);
     }
 
@@ -87,8 +119,8 @@ public:
 
     ///Returns a single value
     template<size_t N>
-    double get_value(const std::array<size_t,N>& idx)const{
-        return (*get_value(idx.data(),idx.data()))[0];
+    double get_value(const index_t<N>& idx)const{
+        return get_value(idx.data(),idx.data())[0];
     }
 
     ///Returns a block, not necessarily the local one
@@ -100,16 +132,10 @@ public:
     ///Returns the tensor's (local) shape
     shape_t my_shape()const{return shape_;}
 
-    ///Function to check if an index is local
-    template<size_t N>
-    bool my_idx(const std::array<size_t,N>& idx)const{
-        for(size_t i=0;i<N;++i)
-            if(idx[i]<shape_[i].first || idx[i]>=shape_[i].second)
-                return false;
-        return true;
-    }
+    ///Function to check if a block is local
+    bool my_block(const shape_t& shape)const;
 
-    ///Returns the tensor's full shape
+    ///Returns the tensor's full shape (the low end is all 0's and implied)
     const std::vector<size_t>& dims()const{return dims_;}
 
     ///Prints the tensor for debuggin'
@@ -122,8 +148,7 @@ private:
     ///The handle assigned to this tensor
     int handle_;
 
-    ///The rank of the tensor (it's not a non-type template parameter to
-    ///hide GA from the outside world)
+    ///The rank of the tensor
     size_t rank_;
 
     ///The dimensions of the tensor
@@ -147,8 +172,33 @@ private:
                    const double* value)const;
 
     ///The main get function, uses GA's inclusive range
-    buffer_t get_value(const size_t* low,
-                                  const size_t* high)const;
+    buffer_t get_value(const size_t* low,const size_t* high)const;
+
+    DECLARE_SERIALIZATION_FRIENDS
+    BPHASH_DECLARE_HASHING_FRIENDS
+
+    ///Makes an usable tensor (for serialization only!!!)
+    GATensor()=default;
+
+    ///Serializes the tensor (sort of...)
+    template<class Archive>
+    void save(Archive & archive) const
+    {
+        archive(handle_,rank_,dims_,shape_,nelems_);
+    }
+
+    ///Unserializes the tensor (sort of...)
+    template<class Archive>
+    void load(Archive & archive)
+    {
+        archive(handle_,rank_,dims_,shape_,nelems_);
+    }
+
+    ///Hashes the tensor
+    void hash(bphash::Hasher & h) const
+    {
+        h(handle_,rank_,dims_,shape_,nelems_);
+    }
 
 };
 
@@ -169,25 +219,39 @@ class GATensorImpl : public pulsar::TensorImpl<N,double>{
 private:
     std::shared_ptr<GATensor> tensor_;///<The actual tensor
 
+    DECLARE_SERIALIZATION_FRIENDS
     BPHASH_DECLARE_HASHING_FRIENDS
 
-    void hash(bphash::Hasher & h) const
-    {
-        //This is a very bad hash...
-        h(tensor_->handle());
-    }
-public:
-    using tensor_type=GATensor;
-    using shared_tensor=std::shared_ptr<tensor_type>;
     /*! \brief For serialization only
      *
      * \warning NOT FOR USE OUTSIDE OF SERIALIZATION
      * \todo Replace if cereal fixes this
      */
-    GATensorImpl() = default;
+    GATensorImpl() = delete;
+
+    template<class Archive>
+    void save(Archive & archive) const
+    {
+       archive(tensor_);
+    }
+
+    template<class Archive>
+    void load(Archive & archive)
+    {
+        archive(tensor_);
+    }
+
+    void hash(bphash::Hasher & h) const
+    {
+        h(*tensor_);
+    }
+
+public:
+    using tensor_type=GATensor;
+    using shared_tensor=std::shared_ptr<tensor_type>;
 
     ///Aliases this GA tensor to \p other
-    GATensorImpl(const shared_tensor& other):
+    GATensorImpl(shared_tensor other):
         tensor_(other)
     {}
 
@@ -199,24 +263,18 @@ public:
     GATensorImpl(tensor_type && other)
         : tensor_(std::make_shared<tensor_type>(std::move(other))) { }
 
-    ///True if the underlying Eigen matrices are the same
+    ///True if the tensors point to the same instance, TODO: check value
     bool operator==(const GATensorImpl& rhs)const
     {
-        return *tensor_==*rhs.tensor_;
+        return tensor_==rhs.tensor_;
     }
 
-    ///True if the underlying Eigen matrices are not the same
+    ///True if the underlying tensor are not the same instance, TODO: check_value
     bool operator!=(const GATensorImpl& rhs)const
     {
         return !((*this)==rhs);
     }
 
-    /*! \brief Obtain a hash of the data
-         *
-         * Details depend on what kind of data is stored.
-         * See the hashing functions of the stored type
-         * for details.
-    */
     bphash::HashValue my_hash(void) const
     {
         return bphash::make_hash(bphash::HashType::Hash128, *this);
@@ -248,11 +306,9 @@ public:
     {
         return tensor_;
     }
-
-
 };
 
-//Allow us to cast from Pulsar's stub pointer back
+//Allow us to cast from Pulsar's stub pointer back to a GATensor
 template<size_t N>
 std::shared_ptr<const GATensor>
 convert_to_GA(const pulsar::TensorImpl<N,double>& ten)
@@ -271,7 +327,9 @@ convert_to_GA(const pulsar::TensorImpl<N,double>& ten)
                 pulsar::numeric_cast<size_t>(eigen_mat.cols())});
             GATensor::shape_t shape({{0,dims[0]},{0,dims[1]}});
             GATensor rv(dims);
-            rv.set_value(shape,eigen_mat.data());
+            double *data=new double[dims[0]*dims[1]];
+            std::copy(eigen_mat.data(),eigen_mat.data()+dims[0]*dims[1],data);
+            rv.set_value(shape,data);
             return std::make_shared<GATensor>(rv);
         }
         //Try Eigen Tensor

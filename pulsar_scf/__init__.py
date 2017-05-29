@@ -2,6 +2,7 @@ from .modinfo import *
 try: #See if we need to initialize stuff
     from .pulsar_scf import *
     GA_initialize()
+
 except:
     pass
 

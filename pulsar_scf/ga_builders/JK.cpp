@@ -69,31 +69,28 @@ MatrixBuilder::ReturnType GAJK::calculate_(const string &,
     const auto& metric=
          *convert_to_eigen(*schwarz_metric->calculate("",deriv,wfn,bs1,bs1)[0]);
 
-    //This is the actual screen object
-    GATensorImpl<2> temp_D(D);
-    SchwarzScreen sieve(metric,temp_D,bs1);
+//    //This is the actual screen object
+//    GATensorImpl<2> temp_D(D);
+//    SchwarzScreen sieve(metric,temp_D,bs1);
 
     //This is an iterator over the unique shell quartets
     ShellQuartetItr quarts(bs1);
 
     //Pointers to the local data
     auto Jdata=J.my_data(),Kdata=K.my_data(),Ddata=D.my_data();
-    double * const pJ=Jdata->data();
-    double * const pK=Kdata->data();
-    double * const pD=Ddata->data();
+    auto pJ=Jdata.data();
+    auto pK=Kdata.data();
+    auto pD=Ddata.data();
 
-    //Actual loop
     while(quarts)
     {
-        //Current shell
-        const auto& shell=*quarts;
+        const auto& shell=*quarts;//Current shell
 
-        //See if shell quartet gets sieved out
-        if(!sieve.is_good(shell))
-        {
-            ++quarts;
-            continue;
-        }
+//        if(!sieve.is_good(shell))//See if shell quartet gets sieved out
+//        {
+//            ++quarts;
+//            continue;
+//        }
 
         //Factor to scale the integral (see JK_build notes in dox/)
         const double total_deg=quarts.degeneracy();
@@ -120,16 +117,18 @@ MatrixBuilder::ReturnType GAJK::calculate_(const string &,
         ++quarts;
     }
 
-    //Push our new data back
+    //Update GA
     J.set_value(J.my_shape(),pJ);
     K.set_value(K.my_shape(),pK);
 
     //Symmetrize
     GATensor J_final=symmetrize(J),K_final=symmetrize(K);
 
+    auto rvJ=make_shared<GATensorImpl<2>>(J_final);
+    auto rvK=make_shared<GATensorImpl<2>>(K_final);
+
     //Return following Pulsar's convention
-    return {make_shared<GATensorImpl<2>>(move(J_final)),
-            make_shared<GATensorImpl<2>>(move(K_final))};
+    return {rvJ,rvK};
 }
 
 }

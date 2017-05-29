@@ -31,7 +31,7 @@ MATRIX_BUILDER(SchwarzMetric)
  *  inequality by the norm of the shell block of the density
  */
 class SchwarzScreen{
-   const Eigen::MatrixXd& metric_;
+   Eigen::MatrixXd metric_;
    const double threshold_;
    Eigen::MatrixXd density_;
 public:
