@@ -1,4 +1,6 @@
 #pragma once
+#include <pulsar/modulebase/MatrixBuilder.hpp>
+#include <pulsar/modulebase/Rank3Builder.hpp>
 
 ///A macro for declaring a new MatrixBuilder module
 #define MATRIX_BUILDER(name)\

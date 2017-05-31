@@ -1,3 +1,5 @@
 if(ENABLE_GA)
-    pulsar_py_test(ga_builders TestJK ${PULSAR_SCF})
+    foreach(x TestH TestG TestF TestJK TestS TestT TestV TestX)
+        pulsar_py_test(ga_builders ${x} ${PULSAR_SCF})
+    endforeach()
 endif()

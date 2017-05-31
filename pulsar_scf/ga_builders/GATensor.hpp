@@ -5,6 +5,8 @@
 #include<pulsar/math/TensorImpl.hpp>
 #include<pulsar/math/EigenImpl.hpp>
 #include<pulsar/math/Cast.hpp>
+#include<pulsar/system/BasisSet.hpp>
+#include<pulsar_scf/helpers/ShellPairItr.hpp>
 #include<bphash/types/All.hpp>
 
 namespace pulsar_scf {
@@ -41,6 +43,9 @@ namespace pulsar_scf {
  *  releases the memory.  In other words, you're not responsible for the memory
  *  managed by this class.
  *
+ *  For templated functions any STL container that stores its data contigouously
+ *  should work (i.e. array, vector, deque, etc.).
+ *
  */
 class GATensor{
 public:
@@ -53,28 +58,24 @@ public:
     ///The type of the buffer
     using buffer_t = std::vector<double>;
 
-    ///The type of an N-dimensional index
-    template<size_t N>
-    using index_t=std::array<size_t,N>;
-
     ///Makes a GATensor from an existing handle
     GATensor(int handle):handle_(handle){}
 
     ///Makes a GATensor with dimensions given by \p dims and blocked via \p chunks
-    template<size_t N>
-    GATensor(const index_t<N>& dims,const index_t<N>& chunks,
-             const char * name=nullptr):
-        GATensor(N,dims.data(),chunks.size()?chunks.data():nullptr,name)
+    /// T should be any contiguous STL container (i.e. array, vector, etc.)
+    template<typename T>
+    GATensor(const T& dims,const T& chunks,const char * name=nullptr):
+        GATensor(dims.size(),dims.data(),chunks.size()?chunks.data():nullptr,name)
     {}
 
     ///Makes a GATensor with dimensions \p dims, blocks determined automatically
-    template<size_t N>
-    explicit GATensor(const index_t<N>& dims,const char * name=nullptr):
-        GATensor(dims,index_t<N>(),name){}
+    template<typename T>
+    explicit GATensor(const T& dims,const char * name=nullptr):
+        GATensor(dims,T(),name){}
 
     ///Makes a GATensor with dimension \p dims, set to value
-    template<size_t N>
-    GATensor(const index_t<N>& dims,double value,const char* name=nullptr):
+    template<typename T>
+    GATensor(const T& dims,double value,const char* name=nullptr):
         GATensor(dims,name)
     {
         fill(value);
@@ -84,30 +85,24 @@ public:
     GATensor(const GATensor& other);
 
     ///Deep copies a GATensor
-    const GATensor& operator=(GATensor other){
-        swap(other);
+    GATensor& operator=(const GATensor& other){
+        GATensor temp(other);
+        std::swap(*this,temp);
         return *this;
     }
 
-    ///Swaps the contents of this GATensor with other
-    void swap(GATensor& other);
+    ///Takes ownership of other
+    GATensor(GATensor&& other);
 
     ///Takes ownership of other
-    GATensor(GATensor&& other){swap(other);}
-
-    ///Takes ownership of other
-    const GATensor& operator=(GATensor&& other)
-    {
-        swap(other);
-        return *this;
-    }
+    GATensor& operator=(GATensor&& other)=default;
 
     ///Deallocates the tensor
     ~GATensor();
 
     ///Sets a single value
-    template<size_t N>
-    void set_value(const index_t<N>& idx, double value)const{
+    template<typename T>
+    void set_value(const T& idx, double value)const{
         set_value(idx.data(),idx.data(),&value);
     }
 
@@ -118,8 +113,8 @@ public:
     void fill(double value)const;
 
     ///Returns a single value
-    template<size_t N>
-    double get_value(const index_t<N>& idx)const{
+    template<typename T>
+    double get_value(const T& idx)const{
         return get_value(idx.data(),idx.data())[0];
     }
 
@@ -132,6 +127,9 @@ public:
     ///Returns the tensor's (local) shape
     shape_t my_shape()const{return shape_;}
 
+    ///Returns the tensor's rank
+    size_t rank()const{return rank_;}
+
     ///Function to check if a block is local
     bool my_block(const shape_t& shape)const;
 
@@ -143,6 +141,12 @@ public:
 
     ///Returns the tensor's handle
     int handle()const{return handle_;}
+
+    ///Transposes the matrix internally (use the utility function transpose to actually get it)
+    void transpose(){transpose_=(!transpose_);}
+
+    ///Returns true if the matrix is transposed
+    bool is_transposed()const{return transpose_;}
 
 private:
     ///The handle assigned to this tensor
@@ -159,6 +163,9 @@ private:
 
     ///The number of local elements
     size_t nelems_;
+
+    ///Is the tensor currently transposed
+    bool transpose_;
 
     ///The main constructor
     GATensor(size_t rank,
@@ -178,7 +185,7 @@ private:
     BPHASH_DECLARE_HASHING_FRIENDS
 
     ///Makes an usable tensor (for serialization only!!!)
-    GATensor()=default;
+    GATensor();
 
     ///Serializes the tensor (sort of...)
     template<class Archive>
@@ -209,6 +216,58 @@ private:
  *  \brief Returns a symmetrized version of \p tensor
  */
 GATensor symmetrize(const GATensor& tensor);
+
+///Converts a column vector into a diagonal matrix
+GATensor vec2matrix(const GATensor& tensor);
+
+///Returns the eigenvalues and eigenvectors of a tensor
+std::pair<GATensor,GATensor> GeneralEigenSolver(const GATensor& tensor,
+                                                const GATensor& metric);
+
+///Normal  (non-generalized) eigen value decomposition
+std::pair<GATensor,GATensor> EigenSolver(const GATensor& tensor);
+
+///Raises each element of a GATensor to a power
+GATensor GApow(const GATensor& tensor, double power);
+
+///Returns alpha AB
+GATensor gemm(double alpha,const GATensor& A,const GATensor&B);
+
+///Returns alpha AB+beta C
+GATensor gemm(double alpha,const GATensor& A,const GATensor&B, double beta,const GATensor& C);
+
+///Makes B+=alpha*A
+void GAaccumulate(GATensor& B,double alpha, const GATensor& A);
+
+///Return alpha*A+beta*B
+GATensor GAAdd(double alpha,const GATensor& A, double beta, const GATensor& B);
+
+
+/** \relates GATensor
+ *  \brief Fills a symmetric GA matrix given an integral generator
+ */
+template<typename int_ptr>
+GATensor fill_symmetric(const int_ptr& Ints,const pulsar::BasisSet& bs)
+{
+    GATensor result(std::array<size_t,2>({bs.n_functions(),bs.n_functions()}));
+    auto data=result.my_data();
+    double * const pdata=data.data();
+    ShellPairItr shell_pair(bs);
+    const size_t nbf=bs.n_functions();
+    while(shell_pair)
+    {
+        const auto& shell=*shell_pair;
+        const double* buffer=Ints->calculate(shell[0],shell[1]);
+        size_t counter=0;
+        for(const auto& idx:shell_pair)
+            pdata[idx[0]*nbf+idx[1]]=pdata[idx[1]*nbf+idx[0]]
+                                    =buffer[counter++];
+        ++shell_pair;
+    }
+    result.set_value(result.my_shape(),pdata);
+    return result;
+}
+
 //@}
 
 
@@ -255,7 +314,7 @@ public:
         tensor_(other)
     {}
 
-    ///Aliases underlying GA tensor
+    ///Deep copies underlying GA tensor
     GATensorImpl(const tensor_type& other)
         : tensor_(std::make_shared<tensor_type>(other)) { }
 

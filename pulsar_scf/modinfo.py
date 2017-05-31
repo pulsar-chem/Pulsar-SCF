@@ -7,7 +7,7 @@ no_options={}
 no_ref,Ryan=[""],["Ryan Richard"]
 mods=["TElectronic","NuclearElectronic","HCore","Overlap","JK",
       "DFJK","G","F","SchwarzScreen","Orthogonalizer","Metric",
-      "GAJK"
+      "GAJK","GAT","GAV","GAS","GAX","GAH","GAG","GAF"
       ]
 force_cache=(OptionType.Bool,False,False,None,
     "Should this module fail if the cache is not used?")
@@ -31,21 +31,41 @@ minfo["TElectronic"]["options"]={
    "T_INTS_KEY":(OptionType.String,None,True,None,"The key for the integrals module"),
    "FORCE_CACHE":force_cache
    }
+minfo["GAT"]["description"]="Builds the kinetic energy in the AO basis"
+minfo["GAT"]["options"]={
+   "T_INTS_KEY":(OptionType.String,None,True,None,"The key for the integrals module"),
+   "FORCE_CACHE":force_cache
+    }
 minfo["NuclearElectronic"]["description"]="Builds the nucleus-electron energy in the AO basis"
 minfo["NuclearElectronic"]["options"]={
       "V_INTS_KEY":(OptionType.String,None,True,None,"The key for the integrals module"),
       "FORCE_CACHE":force_cache
    }
+minfo["GAV"]["description"]="Builds the nucleus-electron energy in the AO basis"
+minfo["GAV"]["options"]={
+      "V_INTS_KEY":(OptionType.String,None,True,None,"The key for the integrals module"),
+      "FORCE_CACHE":force_cache
+ }
 minfo["HCore"]["description"]="Builds the core Hamiltonian in the AO basis"
 minfo["HCore"]["options"]={
       "H_KEYS":(OptionType.ListString,["PSR_T","PSR_V"],False,None,"The keys for the core Hamiltonian"),
       "FORCE_CACHE":force_cache
    }
+minfo["GAH"]["description"]="Builds the core Hamiltonian in the AO basis"
+minfo["GAH"]["options"]={
+      "H_KEYS":(OptionType.ListString,["PSR_GAT","PSR_GAV"],False,None,"The keys for the core Hamiltonian"),
+      "FORCE_CACHE":force_cache
+    }
 minfo["Overlap"]["description"]="Builds the overlap matrix in the AO basis"
 minfo["Overlap"]["options"]={
       "S_INTS_KEY":(OptionType.String,None,True,None,"The key for the integrals module"),
       "FORCE_CACHE":force_cache
    }
+minfo["GAS"]["description"]="Builds the overlap matrix in the AO basis"
+minfo["GAS"]["options"]={
+         "S_INTS_KEY":(OptionType.String,None,True,None,"The key for the integrals module"),
+         "FORCE_CACHE":force_cache
+      }
 minfo["JK"]["description"]="Builds the J and K matrices"
 minfo["JK"]["options"]={
       "ERI_KEY":(OptionType.String,None,True,None,"The key for the ERI"),
@@ -69,11 +89,22 @@ minfo["G"]["options"]={
          "JK_KEY":(OptionType.String,"PSR_JK",False,None,"The key for the JK builder"),
          "FORCE_CACHE":force_cache
       }
+minfo["GAG"]["description"]="Builds G"
+minfo["GAG"]["options"]={
+          "JK_KEY":(OptionType.String,"PSR_GA_JK",False,None,"The key for the JK builder"),
+          "FORCE_CACHE":force_cache
+     }
 minfo["F"]["description"]="Builds the Fock Matrix"
 minfo["F"]["options"]={
                "G_KEY":(OptionType.String,"PSR_G",False,None,"The key for the G builder"),
                "H_KEY":(OptionType.String,"PSR_H",False,None,"The key for the H builder"),
                "FORCE_CACHE":force_cache
+            }
+minfo["GAF"]["description"]="Builds the Fock Matrix"
+minfo["GAF"]["options"]={
+                "G_KEY":(OptionType.String,"PSR_GAG",False,None,"The key for the G builder"),
+                "H_KEY":(OptionType.String,"PSR_GAH",False,None,"The key for the H builder"),
+                "FORCE_CACHE":force_cache
             }
 minfo["SchwarzScreen"]["description"]="Builds diagonal elements of ERI"
 minfo["SchwarzScreen"]["options"]={
@@ -83,6 +114,11 @@ minfo["SchwarzScreen"]["options"]={
 minfo["Orthogonalizer"]["description"]="Builds a transformation that orthogonalizes the AOs"
 minfo["Orthogonalizer"]["options"]={
     "S_KEY":(OptionType.String,"PSR_S",False,None,"The key for building the overlap matrix"),
+    "FORCE_CACHE":force_cache
+}
+minfo["GAX"]["description"]="Builds a transformation that orthogonalizes the AOs"
+minfo["GAX"]["options"]={
+    "S_KEY":(OptionType.String,"PSR_GAS",False,None,"The key for building the overlap matrix"),
     "FORCE_CACHE":force_cache
 }
 minfo["CoreDensity"]={

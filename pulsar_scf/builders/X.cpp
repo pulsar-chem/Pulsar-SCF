@@ -1,4 +1,4 @@
-#include "pulsar_scf/builders/X.hpp"
+#include "pulsar_scf/builders/Builders.hpp"
 #include "pulsar_scf/MatrixFillFxns.hpp"
 #include <pulsar/modulebase/OneElectronIntegral.hpp>
 #include <memory>
@@ -39,6 +39,7 @@ ReturnType Orthogonalizer:: calculate_(const std::string &,
                              ->calculate("",deriv,wfn,bs1,bs2)[0]);
     Eigen::SelfAdjointEigenSolver<matrix_type> eig_solver(S);
     auto U = eig_solver.eigenvectors();
+    //Eigenvalues are in increasing order
     auto s = eig_solver.eigenvalues();
     const double threshold = 1e-6;
     const bool symmetric=false;
@@ -53,7 +54,6 @@ ReturnType Orthogonalizer:: calculate_(const std::string &,
     auto sigma = s.bottomRows(n_cond).array().sqrt();
     auto sigma_sqrt = sigma.matrix().asDiagonal();
     auto sigma_invsqrt = sigma.inverse().matrix().asDiagonal();
-
     // make canonical X/Xinv
     auto U_cond = U.block(0, n-n_cond, n, n_cond);
     matrix_type X = U_cond * sigma_invsqrt;

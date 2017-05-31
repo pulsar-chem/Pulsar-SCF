@@ -1,5 +1,7 @@
 #pragma once
 #include<pulsar/exception/PulsarException.hpp>
+#include"pulsar_scf/PulsarSCF.hpp"
+
 namespace pulsar_scf {
 
 ///Initializes GA with the given heap and stack sizes (negative means GA picks)
@@ -9,8 +11,10 @@ void GA_finalize();
 
 }
 
-
-#define NO_GA_MATRIX_BUILDER(name)\
+#ifdef ENABLE_GA
+#define GA_MATRIX_BUILDER(name) MATRIX_BUILDER(name)
+#else
+#define GA_MATRIX_BUILDER(name)\
     class name: public pulsar::MatrixBuilder {\
     public:\
         name(ID_t id):MatrixBuilder(id){}\
@@ -29,3 +33,4 @@ void GA_finalize();
           throw pulsar::PulsarException("GA was not enabled.");\
         }\
     };
+#endif

@@ -1,15 +1,13 @@
-#include "pulsar_scf/builders/Builders.hpp"
+#include "pulsar_scf/ga_builders/Builders.hpp"
+#include "pulsar_scf/ga_builders/GATensor.hpp"
 #include <pulsar/modulebase/OneElectronIntegral.hpp>
-#include <memory>
-#include <Eigen/Dense>
 
 using namespace pulsar;
 using namespace std;
-using matrix_type=EigenMatrixImpl::matrix_type;
-using ReturnType=MatrixBuilder::ReturnType;
+
 namespace pulsar_scf {
 
-MatrixBuilder::HashType HCore::my_hash_(const string & key,
+MatrixBuilder::HashType GAH::my_hash_(const string & key,
                                                unsigned int deriv,
                                                const Wavefunction &wfn,
                                                const BasisSet &bs1,
@@ -25,7 +23,7 @@ MatrixBuilder::HashType HCore::my_hash_(const string & key,
 }
 
 
-ReturnType HCore:: calculate_(const std::string &,
+MatrixBuilder::ReturnType GAH:: calculate_(const std::string &,
                                      unsigned int deriv,
                                      const Wavefunction & wfn,
                                      const BasisSet &bs1,
@@ -34,14 +32,15 @@ ReturnType HCore:: calculate_(const std::string &,
     if(options().get<bool>("FORCE_CACHE"))
         throw PulsarException("Value not in cache and FORCE_CACHE = true");
     auto terms=options().get<vector<string>>("H_KEYS");
-    matrix_type H=Eigen::MatrixXd::Zero(bs1.n_functions(),bs2.n_functions());
+    const size_t nbf=bs1.n_functions();
+    GATensor H(std::array<size_t,2>({nbf,nbf}),0.0);
     for(const auto& ti: terms)
     {
         auto termi=create_child<MatrixBuilder>(ti);
-        H+=*convert_to_eigen(*termi->calculate("",deriv,wfn,bs1,bs2)[0]);
+        GAaccumulate(H,1.0,*convert_to_GA(*termi->calculate("",deriv,wfn,bs1,bs2)[0]));
     }
 
-    return {make_shared<EigenMatrixImpl>(move(H))};
+    return {make_shared<GATensorImpl<2>>(H)};
 }
 
 }//End namespace

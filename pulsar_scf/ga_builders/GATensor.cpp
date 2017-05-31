@@ -84,7 +84,8 @@ GATensor::GATensor(size_t rank,
     rank_(rank),
     dims_(dims,dims+rank),
     shape_(),
-    nelems_(detail_::nelems(shape_))
+    nelems_(0),
+    transpose_(false)
 {
     //RAII, i.e. don't make a GATensor if you don't want the memory allocated
     auto temp=detail_::to_GAint(rank_,dims_.data());
@@ -100,15 +101,28 @@ GATensor::GATensor(size_t rank,
     }
     GA_Allocate(handle_);
     shape_=detail_::get_shape(rank_,handle_);
+    nelems_=detail_::nelems(shape_);
 }
 
+GATensor::GATensor(GATensor&& other):
+    handle_(std::move(other.handle_)),
+    rank_(std::move(other.rank_)),
+    dims_(std::move(other.dims_)),
+    shape_(std::move(other.shape_)),
+    nelems_(std::move(other.nelems_)),
+    transpose_(std::move(other.transpose_))
+{
+    //We own the memory now
+    other.handle_=0;
+}
 
 GATensor::GATensor(const GATensor& other):
     handle_(GA_Create_handle()),
     rank_(other.rank_),
     dims_(other.dims_),
     shape_(other.shape_),
-    nelems_(other.nelems_)
+    nelems_(other.nelems_),
+    transpose_(other.transpose_)
 {
     auto temp=detail_::to_GAint(rank_,dims_.data());
     GA_Set_data(handle_,rank_,temp.data(),C_DBL);
@@ -116,18 +130,21 @@ GATensor::GATensor(const GATensor& other):
     GA_Copy(other.handle_,handle_);
 }
 
-void GATensor::swap(GATensor& other)
+GATensor::GATensor():
+    handle_(0),
+    rank_(0),
+    dims_(),
+    shape_(),
+    nelems_(0),
+    transpose_(false)
 {
-    std::swap(handle_,other.handle_);
-    std::swap(rank_,other.rank_);
-    std::swap(dims_,other.dims_);
-    std::swap(shape_,other.shape_);
-    std::swap(nelems_,other.nelems_);
+
 }
 
 GATensor::~GATensor(){
     //The other half of RAII, don't let the object go away if you still want it
-    GA_Destroy(handle_);
+    if(handle_)
+        GA_Destroy(handle_);
 }
 
 bool GATensor::my_block(const shape_t& shape)const{
@@ -195,5 +212,118 @@ GATensor symmetrize(const GATensor &tensor)
     GA_Symmetrize(rv.handle());
     return rv;
 }
+
+GATensor vec2matrix(const GATensor &tensor)
+{
+    const size_t len=tensor.dims()[0];
+    GATensor rv(std::array<size_t,2>({len,len}),0.0);
+    auto data=tensor.my_data();
+    auto rvdata=rv.my_data();
+    //TODO: case when all data isn't local
+    for(size_t i=0;i<len;++i)
+        rvdata[i*len+i]=data[i];
+    rv.set_value(rv.my_shape(),rvdata.data());
+    return rv;
+
+}
+
+//TODO: Figure out how to get this PEIGS library and then actually call GA's eigensolver
+std::pair<GATensor,GATensor> GeneralEigenSolver(const GATensor& tensor,
+                                                const GATensor& metric)
+{
+    if(tensor.dims().size()!=2)
+        throw pulsar::PulsarException("Not sure how to diagonalize a vector or proper tensor");
+    const size_t len=tensor.dims()[0];
+    GATensor values(std::array<size_t,1>({len})),
+             vectors(std::array<size_t,2>({tensor.dims()[0],tensor.dims()[1]}));
+    //std::vector<double> scratch(len,0.0);
+    //Assume it's all local
+    auto data=tensor.my_data(),metric_data=metric.my_data();
+    Eigen::Map<Eigen::MatrixXd> H(data.data(),len,len);
+    Eigen::Map<Eigen::MatrixXd> S(metric_data.data(),len,len);
+    Eigen::GeneralizedSelfAdjointEigenSolver<Eigen::MatrixXd> eig_solver(H,S);
+    auto P = eig_solver.eigenvectors().transpose();
+    //Eigenvalues are in increasing order
+    auto E = eig_solver.eigenvalues();
+    values.set_value(values.my_shape(),E.data());
+    //GA_Diag(tensor.handle(),metric.handle(),vectors.handle(),scratch.data());
+    vectors.set_value(vectors.my_shape(),P.data());
+    return std::make_pair(values,vectors);
+}
+
+std::pair<GATensor,GATensor> EigenSolver(const GATensor& tensor)
+{
+    if(tensor.dims().size()!=2)
+        throw pulsar::PulsarException("Not sure how to diagonalize a vector or proper tensor");
+    const size_t len=tensor.dims()[0];
+    GATensor values(std::array<size_t,1>({len})),
+              vectors(std::array<size_t,2>({len,len}));
+    //std::vector<double> scratch(len,0.0);
+    //GA_Diag_std(tensor.handle(),vectors.handle(),scratch.data());
+    auto data=tensor.my_data();
+    Eigen::Map<Eigen::MatrixXd> H(data.data(),len,len);
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eig_solver(H);
+    Eigen::MatrixXd P = eig_solver.eigenvectors().transpose();
+    //Eigenvalues are in increasing order
+    auto E = eig_solver.eigenvalues();
+    values.set_value(values.my_shape(),E.data());
+    vectors.set_value(vectors.my_shape(),P.data());
+    //GA_Diag(tensor.handle(),metric.handle(),vectors.handle(),scratch.data());
+    return std::make_pair(values,vectors);
+}
+
+GATensor GApow(const GATensor& tensor,double power)
+{
+    GATensor rv(tensor);
+    auto data=rv.my_data();
+    for(double& x :data)x=std::pow(x,power);
+    rv.set_value(rv.my_shape(),data.data());
+    return rv;
+}
+
+GATensor gemm(double alpha,const GATensor& A,const GATensor&B)
+{
+    std::array<size_t,2> dims({A.dims()[A.is_transposed()],
+                               B.dims()[!B.is_transposed()]});
+    GATensor C(dims,0.0);
+    return gemm(alpha,A,B,1.0,C);
+}
+
+GATensor gemm(double alpha,const GATensor& A,const GATensor&B, double beta,const GATensor& C)
+{
+    if(A.rank()==0||A.rank()>2||
+       B.rank()==0||B.rank()>2||
+       C.rank()==0||C.rank()>2)
+        throw pulsar::PulsarException("NYI gemm with rank!= 1 or 2");
+    //TODO: Skip copy if A and B are not modified by GA
+    GATensor rv(C),_A(A),_B(B);
+    char ta=A.is_transposed()?'T':'N';
+    char tb=B.is_transposed()?'T':'N';
+
+    //A and B can be vectors (so only grab 1st dimension)
+    //Vectors are column vectors
+    GAint m=A.dims()[0];//Right if A is not transposed
+    GAint n=B.dims()[0];//Right if B is transposed
+    GAint k=A.dims()[0];//Right if A is transposed
+    if(ta=='T')m=(A.rank()==1? 1 : A.dims()[1]);
+    if(tb=='N')n=(B.rank()==1? 1 : B.dims()[1]);
+    if(ta=='N')k=(A.rank()==1? 1 : A.dims()[1]);
+    GA_Dgemm(ta,tb,m,n,k,alpha,_A.handle(),_B.handle(),beta,rv.handle());
+    return rv;
+}
+
+void GAaccumulate(GATensor& B,double alpha,const GATensor& A)
+{
+    double one=1.0;
+    GA_Add(&one,B.handle(),&alpha,A.handle(),B.handle());
+}
+
+GATensor GAAdd(double alpha,const GATensor& A, double beta, const GATensor& B)
+{
+    GATensor C(A.dims());
+    GA_Add(&alpha,A.handle(),&beta,B.handle(),C.handle());
+    return C;
+}
+
 
 }//End namespace pulsar_scf

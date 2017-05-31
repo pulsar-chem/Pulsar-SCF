@@ -1,16 +1,8 @@
 #include "pulsar_scf/builders/D.hpp"
-#include "pulsar_scf/builders/DF.hpp"
-#include "pulsar_scf/builders/G.hpp"
-#include "pulsar_scf/builders/F.hpp"
-#include "pulsar_scf/builders/H.hpp"
-#include "pulsar_scf/builders/JK.hpp"
-#include "pulsar_scf/builders/S.hpp"
+#include "pulsar_scf/builders/Builders.hpp"
 #include "pulsar_scf/SCF.hpp"
 #include "pulsar_scf/helpers/SchwarzScreen.hpp"
-#include "pulsar_scf/builders/T.hpp"
-#include "pulsar_scf/builders/V.hpp"
-#include "pulsar_scf/builders/X.hpp"
-#include "pulsar_scf/ga_builders/JK.hpp"
+#include "pulsar_scf/ga_builders/Builders.hpp"
 using pulsar::ModuleCreationFuncs;
 
 extern "C" {
@@ -33,6 +25,13 @@ ModuleCreationFuncs insert_supermodule(void){
     cf.add_cpp_creator<pulsar_scf::NuclearElectronic>("NuclearElectronic");
     cf.add_cpp_creator<pulsar_scf::Orthogonalizer>("Orthogonalizer");
     cf.add_cpp_creator<pulsar_scf::GAJK>("GAJK");
+    cf.add_cpp_creator<pulsar_scf::GAT>("GAT");
+    cf.add_cpp_creator<pulsar_scf::GAV>("GAV");
+    cf.add_cpp_creator<pulsar_scf::GAS>("GAS");
+    cf.add_cpp_creator<pulsar_scf::GAX>("GAX");
+    cf.add_cpp_creator<pulsar_scf::GAH>("GAH");
+    cf.add_cpp_creator<pulsar_scf::GAG>("GAG");
+    cf.add_cpp_creator<pulsar_scf::GAF>("GAF");
     return cf;
 }
 

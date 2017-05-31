@@ -59,22 +59,18 @@ def run(mm):
     bs=wf.system.get_basis_set("PRIMARY")
     guess=mm.get_module("PSR_DCore",0).deriv(0,wf)[0]
     JKmod=mm.get_module("PSR_GA_JK",0)
-    JK = JKmod.calculate("???",0,guess,bs,bs)
-    dims=JK[0].sizes()
-    J=np.ndarray(dims)
-    K=np.ndarray(dims)
-    for i in range(dims[0]):
-        for j in range(dims[1]):
-            J[i,j]=JK[0].get_value([i,j])
-            K[i,j]=JK[1].get_value([i,j])
-    tester.test_double_vector("J",J.flatten(),corr_J)
-    tester.test_double_vector("K",K.flatten(),corr_K)
-    #JKmod.options().change("FORCE_CACHE",True)
-    #JK=JKmod.calculate("???",0,guess,bs,bs)
-    #J=np.array(JK[0].get_matrix())
-    #K=np.array(JK[1].get_matrix())
-    #tester.test_double_vector("Cache J",J.flatten(),corr_J)
-    #tester.test_double_vector("Cache K",K.flatten(),corr_K)
+    for x in [False,True]:
+        JKmod.options().change("FORCE_CACHE",x)
+        JK=JKmod.calculate("???",0,guess,bs,bs)
+        dims=JK[0].sizes()
+        J=np.ndarray(dims)
+        K=np.ndarray(dims)
+        for i in range(dims[0]):
+            for j in range(dims[1]):
+                J[i,j]=JK[0].get_value([i,j])
+                K[i,j]=JK[1].get_value([i,j])
+        tester.test_double_vector("J",J.flatten(),corr_J)
+        tester.test_double_vector("K",K.flatten(),corr_K)
 
     #JKmod=mm.get_module("PSR_DFJK",0)
     #JK=JKmod.calculate("",0,guess,bs,bs)

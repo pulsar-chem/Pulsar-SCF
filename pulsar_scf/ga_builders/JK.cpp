@@ -1,7 +1,6 @@
-#include "pulsar_scf/ga_builders/JK.hpp"
+#include "pulsar_scf/ga_builders/Builders.hpp"
 #include "pulsar_scf/HelperFunctions.hpp"
 #include <pulsar/modulebase/FourCenterIntegral.hpp>
-#include <pulsar/modulebase/Rank3Builder.hpp>
 #include <memory>
 #include "pulsar_scf/ga_builders/GATensor.hpp"
 #include "pulsar_scf/helpers/ShellQuartetItr.hpp"
