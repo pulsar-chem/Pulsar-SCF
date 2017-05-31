@@ -1,6 +1,5 @@
 #include "pulsar_scf/ga_builders/Builders.hpp"
 #include "pulsar_scf/ga_builders/GATensor.hpp"
-#include <pulsar/modulebase/OneElectronIntegral.hpp>
 
 using namespace pulsar;
 using namespace std;

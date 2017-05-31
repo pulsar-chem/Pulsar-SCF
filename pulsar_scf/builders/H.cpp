@@ -1,5 +1,4 @@
 #include "pulsar_scf/builders/Builders.hpp"
-#include <pulsar/modulebase/OneElectronIntegral.hpp>
 #include <memory>
 #include <Eigen/Dense>
 

@@ -1,6 +1,5 @@
 #include "pulsar_scf/builders/Builders.hpp"
 #include "pulsar_scf/MatrixFillFxns.hpp"
-#include <pulsar/modulebase/OneElectronIntegral.hpp>
 #include <memory>
 
 using namespace pulsar;
