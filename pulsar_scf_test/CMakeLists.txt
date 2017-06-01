@@ -11,9 +11,7 @@ if("${CMAKE_CXX_COMPILER_ID}" MATCHES "Intel")
 endif()
 
 find_package(pulsar CONFIG REQUIRED)
-
-set(PULSAR_SCF ${STAGE_DIR}/${PULSAR_MODULE_DIR})
-set(PULSAR_SCF_LIBRARY ${PULSAR_SCF}/pulsar_scf.so)
+get_filename_component(PULSAR_SCF_PREFIX ${PULSAR_SCF_PREFIX} DIRECTORY)
 include_directories(${PULSAR_SCF_ROOT})
 foreach(dir builders ga_builders helpers scf)
   add_subdirectory(${dir})

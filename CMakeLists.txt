@@ -63,7 +63,7 @@ add_dependencies(pulsar_scf global_arrays)
 # Pulsar SCF tests
 ###############################
 
-
+set(PULSAR_SCF_PREFIX ${STAGE_DIR}${CMAKE_INSTALL_PREFIX}/pulsar_scf)
 ExternalProject_Add(pulsar_scf_test
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/pulsar_scf_test
     CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/test_stage
@@ -72,6 +72,7 @@ ExternalProject_Add(pulsar_scf_test
                -DPULSAR_SCF_ROOT=${CMAKE_CURRENT_SOURCE_DIR}
                -DENABLE_GA=${ENABLE_GA}
                -DSTAGE_DIR=${STAGE_DIR}
+               -DPULSAR_SCF_PREFIX=${PULSAR_SCF_PREFIX}
     BUILD_ALWAYS 1
     CMAKE_CACHE_ARGS -DCMAKE_PREFIX_PATH:LIST=${CMAKE_PREFIX_PATH}
                      -DCMAKE_INSTALL_RPATH:LIST=${CMAKE_INSTALL_RPATH}
