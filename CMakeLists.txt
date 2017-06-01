@@ -4,7 +4,7 @@ project(pulsar-scf-superbuild CXX)
 include(ExternalProject)
 
 
-option(ENABLE_GA "Build Global Array bindings?" False)
+option(ENABLE_GA "Build Global Array bindings?" OFF)
 
 ############################
 # Build type

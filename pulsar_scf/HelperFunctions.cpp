@@ -11,6 +11,15 @@ using matrix_type=EigenMatrixImpl::matrix_type;
 
 namespace pulsar_scf {
 
+size_t nshells(const BasisSet& bs)
+{
+    size_t nshells=0;
+    for(const auto& shelli : bs)
+        nshells+=shelli.n_general_contractions();
+    return nshells;
+}
+
+
 shared_ptr<const IrrepSpinVectorD> guess_occ(const Wavefunction& wf)
 {
     if(wf.occupations)return wf.occupations;

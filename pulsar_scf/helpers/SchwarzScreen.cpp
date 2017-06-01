@@ -1,6 +1,7 @@
 #include "pulsar_scf/helpers/SchwarzScreen.hpp"
 #include <pulsar/modulebase/FourCenterIntegral.hpp>
 #include "pulsar_scf/helpers/ShellPairItr.hpp"
+#include "pulsar_scf/HelperFunctions.hpp"
 
 using namespace pulsar;
 using namespace std;
@@ -36,7 +37,7 @@ ReturnType SchwarzMetric::calculate_(const std::string &,
     if(!is_symmetric)
         throw PulsarException("Non-symmetric case is not coded yet");
     ShellPairItr shell_pair(bs1);
-    matrix_type S(bs1.n_shell(false),bs1.n_shell(false));
+    matrix_type S(nshells(bs1),nshells(bs2));
     while(shell_pair)
     {
        const auto& idx=*shell_pair;
@@ -57,7 +58,7 @@ SchwarzScreen::SchwarzScreen(const Eigen::MatrixXd& metric,
                              const BasisSet& bs,
                              double threshold):
     metric_(metric),
-    density_(Eigen::MatrixXd::Zero(bs.n_shell(false),bs.n_shell(false))),
+    density_(Eigen::MatrixXd::Zero(nshells(bs),nshells(bs))),
     threshold_(threshold)
 {
     ShellPairItr shell_pairs(bs);

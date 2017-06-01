@@ -4,6 +4,10 @@
 #include <pulsar/modulebase/All.hpp>
 namespace pulsar_scf {
 
+///This function returns the number of shells in a Pulsar basis set accounting
+///for the fact that some of them may be general shells
+size_t nshells(const pulsar::BasisSet& bs);
+
 
 /** \brief This function guesses occupations for our SCF computation
  *
