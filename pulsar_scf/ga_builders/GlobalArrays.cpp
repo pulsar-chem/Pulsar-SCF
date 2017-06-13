@@ -40,10 +40,6 @@ GAEnv Env_;
 void GA_initialize(int heap,int stack){
     Env_.MA_Init(heap,stack);
 }
-void GA_finalize()
-{
-
-}
 
 }//end namespace pulsar_scf
 
@@ -71,8 +67,6 @@ PYBIND11_PLUGIN(pulsar_scf)
     m.def("GA_initialize", pulsar_scf::GA_initialize,
           pybind11::arg("heap") = -1,
           pybind11::arg("stack") = -1);
-    m.def("GA_finalize",pulsar_scf::GA_finalize);
-
     export_GA_x_impl<2>(m,"GAMatrixImpl");
     export_GA_x_impl<3>(m,"GARank3Impl");
 

@@ -36,7 +36,7 @@ ModuleCreationFuncs insert_supermodule(void){
 }
 
 void finalize_supermodule(){
-    pulsar_scf::GA_finalize();
+
 }
 
 }
