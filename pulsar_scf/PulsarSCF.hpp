@@ -38,3 +38,11 @@
                           const pulsar::BasisSet &bs2,\
                           const pulsar::BasisSet &bs3);\
     };
+
+///A macro for declaring a new EnergyMethod
+#define ENERGYMETHOD(name)\
+class name: public pulsar::EnergyMethod {\
+public:\
+    name(ID_t id):EnergyMethod(id){}\
+    pulsar::DerivReturnType deriv_(size_t deriv,const pulsar::Wavefunction & wfn);\
+};

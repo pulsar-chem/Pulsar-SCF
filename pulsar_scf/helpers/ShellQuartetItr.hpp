@@ -2,18 +2,11 @@
 #include "pulsar_scf/helpers/ShellPairItr.hpp"
 
 namespace pulsar_scf{
+
 /** \brief Iterates over all unique quartets of shells for a given basis set.
  *
- *  This is technically a generator and not an iterator.  What that means is
- *  that it's use is a bit different, something akin to:
- *
- *  BasisSet bs;
- *  ShellQuartetItr my_itr(bs);
- *  while(my_itr){
- *      //Do stuff
- *      ++my_itr;
- *  }
- *
+ *   The usage for this class is similar to that of ShellPairItr so consult its
+ *   documentation.
  */
 class ShellQuartetItr{
 private:

@@ -6,26 +6,60 @@
 namespace pulsar_scf {
 namespace detail_ {
 
+/** \brief This is code factorization for filling symmetric matrices from
+ *         integral buffers
+ *
+ *  \note The integrals builder already knows what quantum mechanical operator
+ *        to use.
+ *
+ *  \param[in] Ints A module pointer that will be invoked for each shell pair
+ *                  m,n to get the value of element "m,n"
+ *  \param[in] bs The basis set used for the integrals
+ *
+ *
+ *  \tparam matrix_type The type of our resulting matrix
+ *  \tparam int_ptr The type of a module pointer to the integral builder
+ */
 template<typename matrix_type,typename int_ptr>
 matrix_type fill_symmetric(const int_ptr& Ints,
                            const pulsar::BasisSet& bs)
 {
+    //Buffer for our result
     matrix_type result(bs.n_functions(),bs.n_functions());
+
+    //Iterator over shell pairs in the basis set
     ShellPairItr shell_pair(bs);
 
-    while(shell_pair)
+
+    while(shell_pair)//Loop over shell pairs
     {
+        //Our current shell pair
         const auto& shell=*shell_pair;
+
+        //The integral block corresponding to said pair
         const double* buffer=Ints->calculate(shell[0],shell[1]);
+
+        if(buffer==nullptr)//Shell pair screened out
+        {
+            ++shell_pair;
+            continue;
+        }
+
+        //Loop over shells in row major format, exploiting symmetry
         size_t counter=0;
         for(const auto& idx:shell_pair)
             result(idx[0],idx[1])=result(idx[1],idx[0])=buffer[counter++];
+
+
+        //Next shell pair
         ++shell_pair;
     }
     return result;
 }
 
-//Untested
+//Untested, but similar to above, except for case where basis sets are not
+//equal.  Rather than using this shell_pair iterator should be specialized to
+//two basis sets
 template<typename matrix_type,typename int_ptr>
 matrix_type fill_asymmetric(const int_ptr& Ints,
                             const pulsar::BasisSet& bs1,
