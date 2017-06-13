@@ -4,6 +4,8 @@
 namespace pulsar_scf {
 
 ///This class currently assumes it is iterating over (P|mn)
+///Usage and details of this class are nearly identical to ShellPairItr so
+///consult its documentation
 class ShellTripleItr{
     using array_t=std::array<size_t,3>;
     ///The starting index for the DF shell (last element is the number of basis functions)

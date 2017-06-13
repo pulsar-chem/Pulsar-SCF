@@ -3,6 +3,39 @@
 #include<array>
 
 namespace pulsar_scf {
+
+/** \brief In order to disguise the details of iterating over shell pairs one
+ *         uses this iterator.
+ *
+ *  There are a lot of times when one wants to iterate over shell pairs, this is
+ *  done with two nested for loops; however, particularly when the matrices are
+ *  symmetric the logic becomes quite nasty and easy to mess up.  This class
+ *  encapsulates said logic keeping your code clean.
+ *
+ *  This iterator is sort of an iterator within an iterator.  The outer iterator
+ *  loops over the shell pairs.  Then for each shell pair it is possible to get
+ *  a pair of iterators over the basis functions in that shell pair.  Typically
+ *  this leads to code like:
+ *
+ *   \code{.cpp}
+ *   ShellPairItr itr(bs);//Bs is the basis set we are iterating over
+ *   while(itr)
+ *   {
+ *     //Do stuff with only the value of the shells
+ *
+ *     for(const auto x: itr)
+ *     {
+ *        //Do stuff with the values of the basis functions within the shell
+ *     }
+ *      ++itr;
+ *   }
+ *
+ *   \endcode
+ *
+ *   \TODO: Possible to generalize this triplet and quartet into one class?
+ *   \TODO: Allow for two basis sets and specialize for case when they are not
+ *          the same
+ */
 class ShellPairItr{
     using array_t=std::array<size_t,2>;
     ///The starting index for each shell (last element is the number of basis functions)
@@ -14,9 +47,7 @@ class ShellPairItr{
     ///The index of the current pair
     size_t current_pair_;
 
-
-
-    ///An iterator over the basis functions
+    ///An iterator over the basis functions in the shell pair
     class BasisFunctionPairItr{
     private:
         friend class ShellPairItr;

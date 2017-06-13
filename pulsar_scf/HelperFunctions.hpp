@@ -14,9 +14,13 @@ size_t nshells(const pulsar::BasisSet& bs);
  *  If `wf.occupations` is set they are simply returned.  Otherwise, if the
  *  number of electrons is even and the multiplicity is singlet all orbitals are
  *  assumed to be doubly occupied.  I haven't worried about other guesses yet...
+ *
+ *  \TODO: Worry about other gueses
  */
 std::shared_ptr<const pulsar::IrrepSpinVectorD> guess_occ(const pulsar::Wavefunction& wf);
 
+
+///Code factorization for moving tensors into the wavefunction
 pulsar::Wavefunction update_wfn(const pulsar::Wavefunction& wf,
                                 const Eigen::MatrixXd *Ca,
                                 const Eigen::MatrixXd *Da,
