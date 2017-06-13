@@ -1,6 +1,9 @@
 #pragma once
 #include "pulsar_scf/PulsarSCF.hpp"
 
+///This is a header file for declaring all of the various builders that will be
+///used in throughout the SCF code
+
 namespace pulsar_scf {
 
 ///Builds the overlap matrix
